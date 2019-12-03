@@ -5,7 +5,7 @@
     "node": "13.2.0"
   },
   "scripts": {
-    "start": "dist/server.js",
+    "start": "node dist/server.js",
     "lint": "tslint --project tsconfig.json --format stylish",
     "build": "tsc",
     "serve-dev": "ts-node src/server.ts",
