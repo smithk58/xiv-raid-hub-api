@@ -1,11 +1,15 @@
 {
   "name": "xiv-raid-hub-api",
   "version": "0.0.0",
+  "engines": {
+    "node": "13.2.0"
+  },
   "scripts": {
+    "main": "server.js",
     "lint": "tslint --project tsconfig.json --format stylish",
     "build": "tsc",
-    "serve": "ts-node src/server.ts",
-    "start": "nodemon"
+    "serve-dev": "ts-node src/server.ts",
+    "start-dev": "nodemon"
   },
   "dependencies": {
     "@koa/cors": "^3.0.0",

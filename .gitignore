@@ -1,4 +1,6 @@
+# misc
 .env
+/dist
 # dependencies
 /node_modules
 
