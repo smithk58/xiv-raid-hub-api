@@ -1,5 +1,6 @@
+.env
 # dependencies
-/node-modules
+/node_modules
 
 # IDEs and editors
 /.idea
