@@ -1,0 +1,37 @@
+{
+  "name": "xiv-raid-hub-api",
+  "version": "0.0.0",
+  "scripts": {
+    "lint": "tslint --project tsconfig.json --format stylish",
+    "build": "tsc",
+    "serve": "ts-node src/server.ts",
+    "start": "nodemon"
+  },
+  "dependencies": {
+    "@koa/cors": "^3.0.0",
+    "dotenv": "^8.2.0",
+    "http-status-codes": "^1.4.0",
+    "koa": "^2.0",
+    "koa-bodyparser": "^4.2.1",
+    "koa-helmet": "^5.2.0",
+    "koa-logger": "^3.2.1",
+    "koa-respond": "^2.1.0",
+    "typeorm": "^0.2.20"
+  },
+  "private": true,
+  "devDependencies": {
+    "@koa/router": "^8.0.2",
+    "@types/http-status-codes": "^1.2.0",
+    "@types/koa": "^2.11.0",
+    "@types/koa-bodyparser": "^4.3.0",
+    "@types/koa-helmet": "^3.1.2",
+    "@types/koa-logger": "^3.1.1",
+    "@types/koa__cors": "^2.2.3",
+    "@types/koa__router": "^8.0.2",
+    "@types/node": "^12.12.14",
+    "nodemon": "^2.0.1",
+    "ts-node": "^8.5.4",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.2"
+  }
+}
