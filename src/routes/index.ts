@@ -1,8 +1,7 @@
 import * as Router from '@koa/router';
 
-import MovieRouter from './movie';
+import UserRouter from './user';
 
 const apiRouter = new Router({prefix: '/api'});
-apiRouter.use(MovieRouter);
-
+apiRouter.use(UserRouter);
 export default apiRouter;

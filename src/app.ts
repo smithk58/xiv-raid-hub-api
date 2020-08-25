@@ -4,19 +4,35 @@ import * as Helmet from 'koa-helmet';
 import * as Logger from 'koa-logger';
 import * as Cors from '@koa/cors';
 import * as BodyParser from 'koa-bodyparser';
-
+const respond = require('koa-respond');
+const grant = require('grant').koa();
+const session = require('koa-session');
 import apiRouter from "./routes";
 require('dotenv').config();
 
 const app: Koa = new Koa();
-
+app.keys = [process.env.APP_SECRET_KEY];
+// Security
 app.use(Helmet());
-app.use(Cors());
 
+// Logger and CORS for local dev
 if (process.env.NODE_ENV === 'development') {
-    app.use(Logger())
+    app.use(Logger());
+    app.use(Cors({credentials: true}));
 }
 
+// Use koa-session for session management
+app.use(session(app));
+
+// Use grant for oauth 2 handling
+const baseURL = process.env.BACKEND_BASE_URL;
+const oAuthConfig = require('./config.json');
+oAuthConfig.defaults.origin = baseURL;
+oAuthConfig.discord.callback = process.env.FRONTEND_BASE_URL ? process.env.FRONTEND_BASE_URL : baseURL;
+oAuthConfig.discord.secret = process.env.DISCORD_CLIENT_SECRET;
+app.use(grant(oAuthConfig));
+
+// Let's us parse JSON requests
 app.use(BodyParser({
     enableTypes: ['json'],
     jsonLimit: '5mb',
@@ -25,6 +41,9 @@ app.use(BodyParser({
         ctx.throw('body parse error', 422)
     }
 }));
+
+// Easier responses https://www.npmjs.com/package/koa-respond
+app.use(respond());
 
 // Generic error handling middleware.
 app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
