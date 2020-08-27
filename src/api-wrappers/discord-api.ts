@@ -1,13 +1,15 @@
-import {Response} from "node-fetch";
-
 const fetch = require('node-fetch');
 
 export abstract class DiscordApi {
     private static baseURL = 'https://discord.com/api/v6';
-    public static async getUser(token: string): Promise<Response> {
+    public static async getUser(token: string) {
         const url = this.baseURL + '/users/@me';
-        return fetch(url, {
+        const response = await fetch(url, {
             headers: {'Authorization': 'Bearer ' + token}
         });
+        if(response.status !== 200) {
+            return Promise.reject(response);
+        }
+        return response.json();
     }
 }

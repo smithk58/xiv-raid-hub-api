@@ -7,13 +7,23 @@ export class FESession {
         if (discordUser) {
             this.user = {
                 username: discordUser.username,
-                discordAvatar: discordUser.avatar
+                avatarURL: this.getAvatar(discordUser),
             };
         }
     }
     isLoggedIn: boolean;
     user?: {
-        username: string,
-        discordAvatar?: string;
+        username: string
+        avatarURL: string;
     };
+    private getAvatar(user: APIUser) {
+        let avatarURL = 'https://cdn.discordapp.com/';
+        if(user.avatar) {
+            avatarURL += 'avatars/' + user.id + '/' + user.avatar
+        } else {
+            const defaultImage = parseInt(user.discriminator, 10) % 5;
+            avatarURL += 'embed/avatars/' + defaultImage;
+        }
+        return avatarURL += '.png?size=128';
+    }
 }
