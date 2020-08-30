@@ -24,6 +24,6 @@ sessionRouter.get('/', async (ctx: RContext) => {
 });
 sessionRouter.get('/logout', async (ctx: RContext) => {
     ctx.session = null;
-    ctx.ok()
+    ctx.send(200, {});
 });
 export default sessionRouter.routes();
