@@ -1,6 +1,8 @@
 import * as Router from '@koa/router';
 import { DefaultState, Context, ParameterizedContext } from 'koa';
+
 import { DiscordApi } from "../api-wrappers/discord-api";
+import * as moment from 'moment-timezone';
 
 import { FESession } from "../models/FESession";
 import { APIUser } from "discord-api-types/default";
@@ -20,7 +22,10 @@ sessionRouter.get('/', async (ctx: RContext) => {
             // TODO if not 401 probably bubble the error to the UI, app still usable but we can't auth the user and let them know.
         });
     }
-    ctx.ok(new FESession(user))
+    // Figure out the abbreviated timezone (e.g. CST)
+    const timezone = ctx.query.timezone;
+    const abrvTimezone = timezone ? moment().tz(timezone).format('z'): timezone;
+    ctx.ok(new FESession(user, abrvTimezone))
 });
 sessionRouter.get('/logout', async (ctx: RContext) => {
     ctx.session = null;

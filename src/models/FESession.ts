@@ -1,7 +1,8 @@
 import { APIUser } from "discord-api-types/default";
 
 export class FESession {
-    constructor (discordUser: APIUser) {
+    constructor (discordUser: APIUser, timezone?: string) {
+        this.timezone = timezone;
         // Whether or not a user is authed is based on if we have a valid discord user
         this.isLoggedIn = !!discordUser;
         if (discordUser) {
@@ -11,6 +12,7 @@ export class FESession {
             };
         }
     }
+    timezone: string;
     isLoggedIn: boolean;
     user?: {
         username: string
