@@ -12,7 +12,7 @@ export class FESession {
             };
         }
     }
-    timezone: string;
+    timezone?: string;
     isLoggedIn: boolean;
     user?: {
         username: string

@@ -23,9 +23,11 @@ sessionRouter.get('/', async (ctx: RContext) => {
         });
     }
     // Figure out the abbreviated timezone (e.g. CST)
-    const timezone = ctx.query.timezone;
+    let timezone = ctx.query.timezone;
     const abrvTimezone = timezone ? moment().tz(timezone).format('z'): timezone;
-    ctx.ok(new FESession(user, abrvTimezone))
+    // Build <timezone> (<abrv timezone>), since most users recognize that over the more official one
+    timezone = abrvTimezone ? abrvTimezone + ' ('+timezone+')' : timezone;
+    ctx.ok(new FESession(user, timezone))
 });
 sessionRouter.get('/logout', async (ctx: RContext) => {
     ctx.session = null;

@@ -8,6 +8,7 @@ const respond = require('koa-respond');
 const grant = require('grant').koa();
 const session = require('koa-session');
 import apiRouter from "./routes";
+import bodyParser = require("koa-bodyparser");
 require('dotenv').config();
 
 const app: Koa = new Koa();
@@ -33,10 +34,8 @@ oAuthConfig.discord.secret = process.env.DISCORD_CLIENT_SECRET;
 app.use(grant(oAuthConfig));
 
 // Let's us parse JSON requests
-app.use(BodyParser({
+app.use(bodyParser({
     enableTypes: ['json'],
-    jsonLimit: '5mb',
-    strict: true,
     onerror: function (err, ctx) {
         ctx.throw('body parse error', 422)
     }
