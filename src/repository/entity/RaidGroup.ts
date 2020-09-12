@@ -4,6 +4,7 @@ import { Exclude, Type } from "class-transformer";
 
 import { RaidGroupCharacter } from "./RaidGroupCharacter";
 import { User } from "./User";
+import { WeeklyRaidTime } from "./WeeklyRaidTime";
 
 @Entity({name: 'raid_groups'})
 export class RaidGroup {
@@ -17,7 +18,8 @@ export class RaidGroup {
     @Column({length: 10, nullable: true})
     purpose: string;
 
-    hasSchedule?: boolean; // TODO resolve this on getAll() call
+    @Column({default: false})
+    hasSchedule: boolean;
 
     @Column()
     share: boolean;
@@ -31,4 +33,8 @@ export class RaidGroup {
     @Type(() => RaidGroupCharacter)
     @OneToMany(type => RaidGroupCharacter, character => character.raidGroup, {cascade: true})
     characters: RaidGroupCharacter[];
+
+    @Exclude()
+    @OneToMany(type => WeeklyRaidTime, raidTime => raidTime.raidGroup, {cascade: ['remove']})
+    weeklyRaidTimes: WeeklyRaidTime[];
 }
