@@ -1,36 +1,47 @@
 import * as Router from '@koa/router';
 import { DefaultState, Context, ParameterizedContext } from 'koa';
 
-import { DiscordApi } from "../api-wrappers/discord-api";
-import * as moment from 'moment-timezone';
+import { DiscordApi } from "../services/api-wrappers/discord-api";
 
-import { FESession } from "../models/FESession";
-import { APIUser } from "discord-api-types/default";
+import { Session } from "../models/Session";
+import UserService from "../services/UserService";
+import { User } from "../models/User";
 
 // Needed for context type shenanigans
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
 
 const routerOpts: Router.RouterOptions = {prefix: '/session'};
 const sessionRouter: Router = new Router<DefaultState, Context>(routerOpts);
-sessionRouter.get('/', async (ctx: RContext) => {
-    let user: APIUser;
+/**
+ * Grant redirects here after a user has authed via discord. Should confirm the user is who they say they are, update
+ * our local user, etc..
+ */
+sessionRouter.get('/login', async (ctx: RContext) => {
     // Attempt to resolve the discord user if we have an access token
     const oauthGrant = ctx.session.grant;
     if (oauthGrant) {
-        user = await DiscordApi.getUser(oauthGrant.response.access_token).catch(error => {
-            // TODO if 401 attempt token refresh and regrab user, if fails again make them relog in
-            // TODO if not 401 probably bubble the error to the UI, app still usable but we can't auth the user and let them know.
-        });
+        const discordUser = await DiscordApi.getUser(oauthGrant.response.access_token).catch(() => {});
+        delete ctx.session.grant; // don't want the grant to persist in the session for now
+        if (discordUser) {
+            const user = await UserService.login(discordUser);
+            // Persist some basic stuff to the session
+            ctx.session.user = new User(
+                user.id,
+                user.username,
+                UserService.getAvatarUrl(discordUser)
+            );
+        }
     }
+    ctx.redirect(process.env.FRONTEND_BASE_URL ? process.env.FRONTEND_BASE_URL : process.env.BACKEND_BASE_URL);
+});
+sessionRouter.get('/', async (ctx: RContext) => {
     // Figure out the abbreviated timezone (e.g. CST)
-    let timezone = ctx.query.timezone;
-    const abrvTimezone = timezone ? moment().tz(timezone).format('z'): timezone;
-    // Build <timezone> (<abrv timezone>), since most users recognize that over the more official one
-    timezone = abrvTimezone ? abrvTimezone + ' ('+timezone+')' : timezone;
-    ctx.ok(new FESession(user, timezone))
+    const timezone = UserService.getPrettyTimezone(ctx.query.timezone);
+    const user = ctx.session.user;
+    ctx.ok(new Session(user, timezone))
 });
 sessionRouter.get('/logout', async (ctx: RContext) => {
     ctx.session = null;
-    ctx.send(200, {});
+    ctx.send(204);
 });
 export default sessionRouter.routes();

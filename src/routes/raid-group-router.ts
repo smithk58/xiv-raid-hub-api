@@ -2,55 +2,54 @@
 import { Context, DefaultState, ParameterizedContext } from "koa";
 import * as Router from "@koa/router";
 
-import moment = require("moment-timezone");
-
-import { RaidGroup } from "../models/RaidGroup";
 import { WeeklyRaidTime } from "../models/WeeklyRaidTime";
+import { transformAndValidate } from "class-transformer-validator";
+import RaidGroupService from "../services/RaidGroupService";
+import UserService from "../services/UserService";
+import { plainToClass } from "class-transformer";
+import { RaidGroup } from "../repository/entity/RaidGroup";
 
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
 
 const routerOpts: Router.RouterOptions = {};
 const raidGroupRouter: Router = new Router<DefaultState, Context>(routerOpts);
+// Protect these routes
+raidGroupRouter.use(async (ctx: RContext, next) => {
+   UserService.errorIfNotAuthed(ctx);
+   await next();
+});
+
 raidGroupRouter.get('/raid-groups', async (ctx: RContext) => {
-    // 2020-11-05T02:30:00.000Z  - 8:30pm cst (20:30:00 GMT-0600) = + 6 hrs is utc zero
-    const raidGroup: RaidGroup[] = [
-        {
-            "id": "44dcbdc1-15dd-4145-9191-f43d5bf10ef1",
-            "name": "Wipe Squad longer name blah blah",
-            "purpose": "UCOB",
-            "hasSchedule": true
-        },
-        {
-            "id": "7ca1c608-a06d-4cf8-bf0d-a8aa09c5c9d6",
-            "name": "Wipe Squad",
-            "hasSchedule": true
-        }
-    ];
-    /*{
-        id: '1',
-        name: 'Wipe Squad',
-        purpose: 'UCOB',
-        weeklyRaidTimes: [
-            {weekMask: '', isoTime: ''}
-        ]
-    }*/
-    // 2020-09-05T03:59:00.811Z
-    //  America/Chicago
-    // America/Los_Angeles
-    // 8:20pm my time
-    const m1 = moment('2020-09-05T02:03:36.422Z', moment.ISO_8601).tz('America/Chicago');
-    const m2 = moment('2020-09-05T02:03:36.422Z', moment.ISO_8601).tz('America/Los_Angeles');
-    const m3 = moment().tz('America/Los_Angeles');
-    m3.set('hour', 18);
-    m3.set('minute', 0);
-    m3.set('second', 0);
-    console.log('m1', m1.format('YYYY-MM-DDTHH:mm:ss.sssZ'));
-    console.log('m2', m2.format('ddd DD-MMM-YYYY, hh:mm A'));
-    console.log('m3', m3.format('ddd DD-MMM-YYYY, hh:mm A'));
-    ctx.send(200, raidGroup);
+    const raidGroups = await RaidGroupService.getRaidGroups(ctx.session.user.id);
+    ctx.ok(raidGroups);
+});
+raidGroupRouter.post('/raid-groups', async (ctx: RContext) => {
+    const raidGroup = await RaidGroupService.createRaidGroup(ctx.session.user.id, ctx.request.body);
+    ctx.ok(raidGroup);
 });
 raidGroupRouter.get('/raid-groups/:id', async (ctx: RContext) => {
-    // TODO return particular raid group
+    const raidGroupId = ctx.params.id;
+    const raidGroup = await RaidGroupService.getRaidGroup(ctx.session.user.id, raidGroupId);
+    ctx.ok(raidGroup);
+});
+raidGroupRouter.put('/raid-groups/:id', async (ctx: RContext) => {
+    const raidGroup = plainToClass(RaidGroup, ctx.request.body);
+    raidGroup.id = parseInt(ctx.params.id, 10);
+    const res = await RaidGroupService.updateRaidGroup(ctx.session.user.id, raidGroup);
+    if (res) {
+        ctx.ok(res);
+    } else {
+        ctx.notFound('That raid group no longer exists, or you don\'t have permission to update it.');
+    }
+});
+raidGroupRouter.delete('/raid-groups/:id', async (ctx: RContext) => {
+    const raidGroupId = parseInt(ctx.params.id, 10);
+    const res = await RaidGroupService.deleteRaidGroup(ctx.session.user.id, raidGroupId);
+    if (res) {
+        ctx.send(204);
+    } else {
+        ctx.notFound('That raid group no longer exists, or you don\'t have permission to delete it.');
+    }
 });
 raidGroupRouter.get('/raid-groups/:id/schedules', async (ctx: RContext) => {
     const raidGroupId = ctx.params.id;
@@ -71,13 +70,19 @@ raidGroupRouter.get('/raid-groups/:id/schedules', async (ctx: RContext) => {
             "weekMask": 90
         }
     ];
-    ctx.send(200, raidTimes.filter(x => x.raidGroupId === raidGroupId));
+    ctx.ok(raidTimes.filter(x => x.raidGroupId === raidGroupId));
 });
 raidGroupRouter.put('/raid-groups/:id/schedules', async (ctx: RContext) => {
     const raidGroupId = ctx.params.id;
-    const weeklyRaidTimes = ctx.request.body;
-    // TODO https://www.npmjs.com/package/class-transformer-validator
-    ctx.send(200, weeklyRaidTimes);
+    try {
+        const weeklyRaidTimes = await transformAndValidate(WeeklyRaidTime, ctx.request.body);
+        // TODO Still have to validate that id matches
+        // TODO DB shenanigans
+    } catch(err) {
+        ctx.notFound(err);
+    }
+
+    ctx.ok([]);
 });
 raidGroupRouter.get('/schedules', async (ctx: RContext) => {
     const raidTimes: WeeklyRaidTime[] = [
@@ -98,6 +103,6 @@ raidGroupRouter.get('/schedules', async (ctx: RContext) => {
         }
     ];
     // TODO Make sure this is sorted by earliest -> latest time
-    ctx.send(200, raidTimes);
+    ctx.ok(raidTimes);
 });
 export default raidGroupRouter.routes();

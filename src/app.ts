@@ -3,12 +3,14 @@ import * as HttpStatus from 'http-status-codes';
 import * as Helmet from 'koa-helmet';
 import * as Logger from 'koa-logger';
 import * as Cors from '@koa/cors';
-import * as BodyParser from 'koa-bodyparser';
+import * as bodyParser from 'koa-bodyparser';
+import 'reflect-metadata'; // required for class-transformer and typeorm
 const respond = require('koa-respond');
 const grant = require('grant').koa();
 const session = require('koa-session');
 import apiRouter from "./routes";
-import bodyParser = require("koa-bodyparser");
+import { createConnection } from "typeorm";
+
 require('dotenv').config();
 
 const app: Koa = new Koa();
@@ -29,12 +31,12 @@ app.use(session(app));
 const baseURL = process.env.BACKEND_BASE_URL;
 const oAuthConfig = require('./config.json');
 oAuthConfig.defaults.origin = baseURL;
-oAuthConfig.discord.callback = process.env.FRONTEND_BASE_URL ? process.env.FRONTEND_BASE_URL : baseURL;
+oAuthConfig.discord.callback = '/api/session/login';
 oAuthConfig.discord.secret = process.env.DISCORD_CLIENT_SECRET;
 app.use(grant(oAuthConfig));
 
 // Let's us parse JSON requests
-app.use(bodyParser({
+app.use(bodyParser({ // TODO maybe not needed w/ transformAndValidate being used
     enableTypes: ['json'],
     onerror: function (err, ctx) {
         ctx.throw('body parse error', 422)
@@ -49,13 +51,22 @@ app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
     try {
         await next();
     } catch (error) {
-        ctx.status = error.statusCode || error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        error.status = ctx.status;
-        ctx.body = {error};
+        // TODO hacky, need better way to detect validator errors.
+        const isValidatorError = Array.isArray(error) && error.length > 0 && error[0].constraints;
+        if (isValidatorError) {
+            ctx.status = 400;
+            ctx.body = error.toString();
+            // TODO Better for frontend to specifically parse these apart, but this is decent enough for now
+        } else {
+            ctx.status = error.statusCode || error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+            ctx.body = error.message || error.toString();
+        }
+
         ctx.app.emit('error', error, ctx);
     }
 });
-
+// Create connection to DB
+createConnection();
 // Routes
 app.use(apiRouter.routes());
 app.use(apiRouter.allowedMethods());

@@ -2,7 +2,7 @@
   "name": "xiv-raid-hub-api",
   "version": "0.0.0",
   "engines": {
-    "node": "13.2.0"
+    "node": "13.x"
   },
   "scripts": {
     "start": "node dist/server.js",
@@ -25,6 +25,8 @@
     "@types/node": "^12.12.54",
     "@types/node-fetch": "^2.5.7",
     "build-url": "^3.0.0",
+    "class-transformer": "^0.3.1",
+    "class-validator": "^0.12.2",
     "discord-api-types": "^0.1.1",
     "dotenv": "^8.2.0",
     "grant": "^5.3.0",
@@ -37,7 +39,9 @@
     "koa-session": "^6.0.0",
     "moment-timezone": "^0.5.31",
     "node-fetch": "^2.6.0",
-    "typeorm": "^0.2.25"
+    "pg": "^8.3.3",
+    "reflect-metadata": "^0.1.10",
+    "typeorm": "0.2.25"
   },
   "private": true,
   "devDependencies": {
