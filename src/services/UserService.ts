@@ -69,6 +69,7 @@ export default class UserService {
         // TODO Actual auth/route protection using JWT, this is just memes, https://stackoverflow.com/questions/63048522/protect-only-certain-routes-with-koa-jwt
         if(!ctx.session || !ctx.session.user) {
             ctx.send(401)
+            ctx.res.end();
         }
     }
 }
