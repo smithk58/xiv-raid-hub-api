@@ -169,8 +169,19 @@ export default class RaidGroupService {
         }
         // Wrap deletes/saves in a transaction
         return getManager().transaction(async(entityManager: EntityManager) => {
-            await this.deleteWeeklyRaidTimes(entityManager, raidGroupId);
-            return getConnection()
+            const result = await this.deleteWeeklyRaidTimes(entityManager, raidGroupId);
+            // Only update hasSchedule on raid group if going from 0 to >0 or vice versa.
+            const noneToSome = result.affected === 0 && raidTimes.length > 0;
+            const someToNone = result.affected > 0 && raidTimes.length === 0;
+            if (noneToSome || someToNone) {
+                await entityManager.createQueryBuilder()
+                    .update(RaidGroup)
+                    .set({hasSchedule: raidTimes.length > 0})
+                    .where('id = :id', {id: raidGroupId})
+                    .execute()
+            }
+
+            return entityManager
                 .getRepository(WeeklyRaidTime)
                 .save(raidTimes)
         });
@@ -180,7 +191,7 @@ export default class RaidGroupService {
         return entityManager.createQueryBuilder()
             .delete()
             .from(WeeklyRaidTime)
-            .where('raidGroupId = :id', {id: raidGroupId})
+            .where('"raidGroupId" = :id', {id: raidGroupId})
             .execute();
     }
     private static async canSeeRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {

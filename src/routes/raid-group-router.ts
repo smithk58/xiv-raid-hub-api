@@ -14,8 +14,8 @@ const routerOpts: Router.RouterOptions = {};
 const raidGroupRouter: Router = new Router<DefaultState, Context>(routerOpts);
 // Protect these routes
 raidGroupRouter.use(async (ctx: RContext, next) => {
-   UserService.errorIfNotAuthed(ctx);
-   await next();
+    UserService.errorIfNotAuthed(ctx);
+    return next();
 });
 
 raidGroupRouter.get('/raid-groups', async (ctx: RContext) => {
