@@ -28,7 +28,7 @@ raidGroupRouter.post('/raid-groups', async (ctx: RContext) => {
 });
 raidGroupRouter.get('/raid-groups/:id', async (ctx: RContext) => {
     const raidGroupId = ctx.params.id;
-    const raidGroup = await RaidGroupService.getRaidGroup(ctx.session.user.id, raidGroupId);
+    const raidGroup = await RaidGroupService.getRaidGroupWithCharacters(ctx.session.user.id, raidGroupId);
     ctx.ok(raidGroup);
 });
 raidGroupRouter.put('/raid-groups/:id', async (ctx: RContext) => {

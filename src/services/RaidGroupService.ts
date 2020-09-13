@@ -20,6 +20,7 @@ export default class RaidGroupService {
             .innerJoin('characters.character', 'character')
             .where('"group"."ownerId" = :userId', {userId: userId})
             .orWhere('(group.share = true AND character."userId" = :userId)', {userId: userId})
+            .orderBy('group.id', 'ASC')
             .select(['group'])
             .getMany();
     }
@@ -29,7 +30,7 @@ export default class RaidGroupService {
      * @param userId
      * @param raidGroupId
      */
-    public static async getRaidGroup(userId: number, raidGroupId: number): Promise<RaidGroup> {
+    public static async getRaidGroupWithCharacters(userId: number, raidGroupId: number): Promise<RaidGroup> {
         return getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
@@ -40,7 +41,6 @@ export default class RaidGroupService {
             .orderBy('characters.order')
             .getOne();
     }
-
     /**
      * Creates a new raid group and raid group characters.
      * @param userId
@@ -73,7 +73,8 @@ export default class RaidGroupService {
         return getManager().transaction(async(entityManager: EntityManager) => {
             // Delete existing raid group characters ourselves, since type ORM can't figure out to do so and runs into a unique constraint error
             await this.deleteRaidGroupCharacters(entityManager, raidGroup.id);
-            return entityManager.save(RaidGroup, raidGroup);
+            await entityManager.save(RaidGroup, raidGroup);
+            return entityManager.getRepository(RaidGroup).findOne({id: raidGroup.id});
         });
     }
 
