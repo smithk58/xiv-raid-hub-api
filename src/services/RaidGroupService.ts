@@ -17,9 +17,9 @@ export default class RaidGroupService {
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
             .innerJoin('group.characters', 'characters')
-            .innerJoin('characters.character', 'character')
+            .leftJoin('user_characters', 'character', 'characters."characterId" = character."characterId"')
             .where('"group"."ownerId" = :userId', {userId: userId})
-            .orWhere('(group.share = true AND character."userId" = :userId)', {userId: userId})
+            .orWhere('(group.share = true AND (character."userId" = :userId AND "isOwner" = true))', {userId: userId})
             .orderBy('group.id', 'ASC')
             .select(['group'])
             .getMany();
@@ -91,9 +91,9 @@ export default class RaidGroupService {
         }
         // Wrap all the deletes in a transaction
         return getManager().transaction(async(entityManager: EntityManager) => {
-            // Have to delete the related character groups ourselves, because typeorms cascade is dumb and can't figure out composite keys?
+            // Have to delete the related character groups and schedule ourselves, because typeorms cascade is dumb and can't figure out composite keys?
             await this.deleteRaidGroupCharacters(entityManager, raidGroupId);
-            // TODO Delete schedules
+            await this.deleteWeeklyRaidTimes(entityManager, raidGroupId);
             // Finally delete the actual raid group
             return entityManager
                 .createQueryBuilder()
@@ -140,15 +140,14 @@ export default class RaidGroupService {
      */
     public static async getAllWeeklyRaidTimes(userId: number): Promise<WeeklyRaidTime[]> {
         // TODO Make sure this is sorted by earliest -> latest time
-        // TODO Account for sharing
         return getConnection()
             .getRepository(WeeklyRaidTime)
             .createQueryBuilder('wrt')
             .innerJoin('wrt.raidGroup', 'group')
             .innerJoin('group.characters', 'characters')
-            .innerJoin('characters.character', 'character')
+            .leftJoin('user_characters', 'character', 'characters."characterId" = character."characterId"')
             .where('"group"."ownerId" = :userId', {userId: userId})
-            .orWhere('(group.share = true AND character."userId" = :userId)', {userId: userId})
+            .orWhere('(group.share = true AND (character."userId" = :userId AND "isOwner" = true))', {userId: userId})
             .getMany()
     }
 
@@ -181,7 +180,6 @@ export default class RaidGroupService {
                     .where('id = :id', {id: raidGroupId})
                     .execute()
             }
-
             return entityManager
                 .getRepository(WeeklyRaidTime)
                 .save(raidTimes)
@@ -196,11 +194,13 @@ export default class RaidGroupService {
             .execute();
     }
     private static async canSeeRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
-        // TODO Should account for sharing and stuff instead of just owner
         return await getConnection()
             .getRepository(RaidGroup)
-            .createQueryBuilder()
+            .createQueryBuilder('group')
+            .innerJoin('group.characters', 'characters')
+            .leftJoin('user_characters', 'character', 'characters."characterId" = character."characterId"')
             .where('id = :id AND "ownerId" = :ownerId', {id: raidGroupId, ownerId: userId})
+            .orWhere('(group.share = true AND (character."userId" = :userId AND "isOwner" = true))', {userId: userId})
             .getCount() > 0;
     }
     private static async canEditRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {

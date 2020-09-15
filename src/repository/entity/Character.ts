@@ -3,7 +3,6 @@ import { IsIn, IsOptional, validateOrReject } from "class-validator";
 import { Exclude } from "class-transformer";
 
 import { RaidGroup } from "./RaidGroup";
-import { User } from "./User";
 import { RaidGroupCharacter } from "./RaidGroupCharacter";
 import { XIVClasses } from "../../constants";
 
@@ -22,10 +21,6 @@ export class Character {
     @IsOptional()
     @Column({length: 30, nullable: true})
     defaultClass?: string;
-
-    @Exclude()
-    @ManyToOne(type => User, user => user.characters)
-    user?: User;
 
     @Exclude()
     @ManyToMany(type => RaidGroup)

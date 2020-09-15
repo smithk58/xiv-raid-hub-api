@@ -1,8 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, BeforeInsert, BeforeUpdate } from "typeorm";
 import { validateOrReject } from "class-validator";
 
-import { Character } from "./Character";
 import { RaidGroup } from "./RaidGroup";
+import { UserCharacter } from "./UserCharacter";
+import { Exclude } from "class-transformer";
 
 @Entity({name: 'users'})
 export class User {
@@ -24,9 +25,11 @@ export class User {
     @Column({type: 'timestamp'})
     lastLogin: Date;
 
-    @OneToMany(type => Character, character => character.user)
-    characters: Character[];
+    @Exclude()
+    @OneToMany(type => UserCharacter, userCharacter => userCharacter.user)
+    characters: UserCharacter[];
 
+    @Exclude()
     @OneToMany(type => RaidGroup, raidGroup => raidGroup.owner)
     raidGroups: RaidGroup[];
 
