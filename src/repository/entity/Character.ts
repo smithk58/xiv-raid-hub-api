@@ -1,10 +1,9 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, ManyToOne, PrimaryColumn } from "typeorm";
-import { IsIn, IsOptional, validateOrReject } from "class-validator";
+import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, PrimaryColumn } from "typeorm";
+import { validateOrReject } from "class-validator";
 import { Exclude } from "class-transformer";
 
 import { RaidGroup } from "./RaidGroup";
 import { RaidGroupCharacter } from "./RaidGroupCharacter";
-import { XIVClasses } from "../../constants";
 
 @Entity({name: 'characters'})
 export class Character {
@@ -17,10 +16,7 @@ export class Character {
     @Column({length: 30})
     server: string;
 
-    @IsIn(XIVClasses, {message: 'Must be a valid FFXIV class.'})
-    @IsOptional()
-    @Column({length: 30, nullable: true})
-    defaultClass?: string;
+    defaultClass: string;
 
     @Exclude()
     @ManyToMany(type => RaidGroup)

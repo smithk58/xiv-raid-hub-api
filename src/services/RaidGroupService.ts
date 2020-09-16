@@ -47,9 +47,8 @@ export default class RaidGroupService {
      * @param raidGroup
      */
     public static async createRaidGroup(userId: number, raidGroup: RaidGroup): Promise<RaidGroup> {
-        if(typeof(raidGroup.id) !== 'undefined') {
-            throw new Error('A new raid group can\'t have an ID set on it.');
-        }
+        delete raidGroup.id;
+        // TODO Validate characters in raid group are unique
         // Have to call validateOrReject ourselves, since changes in length of characters[] don't trigger @BeforeInsert() or @BeforeUpdate()
         await validateOrReject(raidGroup, {validationError: {target: false}});
         // Assign current user as owner of the new raid group
@@ -63,6 +62,7 @@ export default class RaidGroupService {
      * @param raidGroup
      */
     public static async updateRaidGroup(userId: number, raidGroup: RaidGroup) {
+        // TODO Validate characters in raid group are unique
         // Ensure the raid group exists and they can edit it before continuing
         const canEdit = await RaidGroupService.canEditRaidGroup(userId, raidGroup.id);
         if(!canEdit) {

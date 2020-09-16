@@ -25,6 +25,7 @@
     "@types/node": "^12.12.54",
     "@types/node-fetch": "^2.5.7",
     "build-url": "^3.0.0",
+    "cheerio": "^1.0.0-rc.3",
     "class-transformer": "^0.3.1",
     "class-validator": "^0.12.2",
     "discord-api-types": "^0.1.1",

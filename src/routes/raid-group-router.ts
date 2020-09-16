@@ -23,13 +23,19 @@ raidGroupRouter.get('/raid-groups', async (ctx: RContext) => {
     ctx.ok(raidGroups);
 });
 raidGroupRouter.post('/raid-groups', async (ctx: RContext) => {
-    const raidGroup = await RaidGroupService.createRaidGroup(ctx.session.user.id, ctx.request.body);
-    ctx.ok(raidGroup);
+    const raidGroup = plainToClass(RaidGroup, ctx.request.body);
+    const res = await RaidGroupService.createRaidGroup(ctx.session.user.id, raidGroup);
+    ctx.ok(res);
 });
 raidGroupRouter.get('/raid-groups/:id', async (ctx: RContext) => {
     const raidGroupId = ctx.params.id;
     const raidGroup = await RaidGroupService.getRaidGroupWithCharacters(ctx.session.user.id, raidGroupId);
-    ctx.ok(raidGroup);
+    if (raidGroup) {
+        ctx.ok(raidGroup);
+    } else {
+        ctx.notFound('That raid group no longer exists, or you don\'t have permission to see it.');
+    }
+
 });
 raidGroupRouter.put('/raid-groups/:id', async (ctx: RContext) => {
     const raidGroup = plainToClass(RaidGroup, ctx.request.body);
@@ -44,7 +50,7 @@ raidGroupRouter.put('/raid-groups/:id', async (ctx: RContext) => {
 raidGroupRouter.delete('/raid-groups/:id', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
     const res = await RaidGroupService.deleteRaidGroup(ctx.session.user.id, raidGroupId);
-    if (res) {
+    if (res && res.affected > 0) {
         ctx.send(204);
     } else {
         ctx.notFound('That raid group no longer exists, or you don\'t have permission to delete it.');
@@ -70,7 +76,6 @@ raidGroupRouter.put('/raid-groups/:id/raidTimes', async (ctx: RContext) => {
     }
 });
 raidGroupRouter.get('/raidTimes', async (ctx: RContext) => {
-    const raidGroupId = parseInt(ctx.params.id, 10);
     const res = await RaidGroupService.getAllWeeklyRaidTimes(ctx.session.user.id);
     if (res) {
         ctx.ok(res);

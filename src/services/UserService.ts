@@ -48,15 +48,6 @@ export default class UserService {
     }
 
     /**
-     * Attempts to confirm the specified user is the owner of the specified character ID. Queries the lodestone profile of that character ID for the code of the specified user.
-     * @param userId
-     * @param characterId
-     */
-    public static confirmCharacter(userId: number, characterId: number) {
-
-    }
-
-    /**
      * Attempts to build a more user friendly timezone out of the browsers timezone.
      */
     public static getPrettyTimezone(timezone: string): string {
@@ -72,7 +63,7 @@ export default class UserService {
             const defaultImage = parseInt(discordUser.discriminator, 10) % 5;
             avatarURL += 'embed/avatars/' + defaultImage;
         }
-        return avatarURL += '.png?size=128';
+        return avatarURL + '.png?size=128';
     }
     public static errorIfNotAuthed(ctx: RContext) {
         // TODO Actual auth/route protection using JWT, this is just memes, https://stackoverflow.com/questions/63048522/protect-only-certain-routes-with-koa-jwt
