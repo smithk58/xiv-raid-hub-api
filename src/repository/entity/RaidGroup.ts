@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { ArrayMaxSize, ArrayMinSize, IsOptional } from "class-validator";
 import { Exclude, Type } from "class-transformer";
 
@@ -25,7 +25,15 @@ export class RaidGroup {
     share: boolean;
 
     @Exclude()
+    isOwner?: boolean;
+
+    @Exclude()
+    @Column({name: 'ownerId'})
+    ownerId: number;
+
+    @Exclude()
     @ManyToOne(type => User, user => user.raidGroups, {nullable: false})
+    @JoinColumn({name: 'ownerId'})
     owner: User;
 
     @ArrayMinSize(8)

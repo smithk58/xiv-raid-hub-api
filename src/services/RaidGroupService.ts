@@ -31,15 +31,22 @@ export default class RaidGroupService {
      * @param raidGroupId
      */
     public static async getRaidGroupWithCharacters(userId: number, raidGroupId: number): Promise<RaidGroup> {
-        return getConnection()
+        const raidGroup = await getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
             .innerJoin('group.characters', 'characters')
             .innerJoin('characters.character', 'character')
+            .leftJoin('user_characters', 'usercharacter', 'characters."characterId" = usercharacter."characterId"')
             .where('"group"."id" = :id AND "group"."ownerId" = :userId', {id: raidGroupId, userId: userId})
+            .orWhere('(group.share = true AND (usercharacter."userId" = :userId AND "isOwner" = true))', {userId: userId})
             .select(['group', 'characters', 'character'])
             .orderBy('characters.order')
             .getOne();
+        // TODO do this via addSelectAndMap when typeorm releases in 0.3.0
+        if(raidGroup) {
+            raidGroup.isOwner = raidGroup.ownerId === userId;
+        }
+        return raidGroup;
     }
     /**
      * Creates a new raid group and raid group characters.
