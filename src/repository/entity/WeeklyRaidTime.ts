@@ -1,6 +1,7 @@
-import { IsDateString, IsInt } from "class-validator";
+import { IsInt, Max, Min } from "class-validator";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
-import { Exclude, Type } from "class-transformer";
+import { Exclude } from "class-transformer";
+
 import { RaidGroup } from "./RaidGroup";
 
 @Entity({name: 'weekly_raid_times'})
@@ -20,7 +21,15 @@ export class WeeklyRaidTime {
     @Column()
     weekMask: number;
 
-    @IsDateString()
+    @IsInt()
+    @Min(0)
+    @Max(23)
     @Column()
-    startTime: string;
+    utcHour: number;
+
+    @IsInt()
+    @Min(0)
+    @Max(60)
+    @Column()
+    utcMinute: number;
 }
