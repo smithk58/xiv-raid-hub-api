@@ -1,4 +1,6 @@
-module.exports = {
+let fileExt = process.env.NODE_ENV === 'development' ? 'ts' : 'js';
+let srcDir = process.env.NODE_ENV === 'development' ? 'src' : 'dist'
+let config = {
    "type": "postgres",
    "host": process.env.POSTGRES_HOST,
    "port": 5432,
@@ -7,21 +9,22 @@ module.exports = {
    "database": process.env.POSTGRES_DATABASE,
    "synchronize": true,
    "logging": false,
-   "entities": [
-      "src/repository/entity/**/*.ts"
-   ],
-   "migrations": [
-      "src/repository/migration/**/*.ts"
-   ],
-   "subscribers": [
-      "src/repository/subscriber/**/*.ts"
-   ],
-   "cli": {
-      "entitiesDir": "src/repository/entity",
-      "migrationsDir": "src/repository/migration",
-      "subscribersDir": "src/repository/subscriber"
-   },
-   "driver_extra": {
-      "rejectUnauthorized": false
-   }
-}
+    "entities": [
+        srcDir + "/repository/entity/**/*." + fileExt
+    ],
+    "migrations": [
+        srcDir + "/repository/migration/**/*." + fileExt
+    ],
+    "subscribers": [
+        srcDir + "/repository/subscriber/**/*." + fileExt
+    ],
+    "cli": {
+        "entitiesDir": srcDir + "/repository/entity",
+        "migrationsDir": srcDir + "/repository/migration",
+        "subscribersDir": srcDir + "/repository/subscriber"
+    },
+    "driver_extra": {
+        "rejectUnauthorized": false
+    }
+};
+module.exports = config;

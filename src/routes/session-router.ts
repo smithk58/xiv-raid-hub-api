@@ -1,7 +1,7 @@
 import * as Router from '@koa/router';
 import { DefaultState, Context, ParameterizedContext } from 'koa';
 
-import { DiscordApi } from "../services/api-wrappers/discord-api";
+import { DiscordApi } from "../services/api-wrappers/discord/discord-api";
 
 import { Session } from "../models/Session";
 import UserService from "../services/UserService";

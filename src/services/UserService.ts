@@ -1,11 +1,11 @@
-import { APIUser } from "discord-api-types";
 import { getConnection } from "typeorm";
 import { User } from "../repository/entity/User";
 import * as moment from "moment-timezone";
 import { RContext } from "../routes/raid-group-router";
+import { DiscordUser } from "./api-wrappers/discord/DiscordUser";
 
 export default class UserService {
-    public static async login(discordUser: APIUser): Promise<User> {
+    public static async login(discordUser: DiscordUser): Promise<User> {
         const userRepository = getConnection().getRepository(User);
         // Check if user exists, if so return their details, otherwise create a user for them
         const existingUser = await userRepository.findOne( {
@@ -21,7 +21,7 @@ export default class UserService {
         return getConnection().getRepository(User).findOne(userId);
 
     }
-    public static async createUser(discordUser: APIUser): Promise<User> {
+    public static async createUser(discordUser: DiscordUser): Promise<User> {
         const userRepository = getConnection().getRepository(User);
         const user = new User();
         user.discordId = discordUser.id;
@@ -38,7 +38,7 @@ export default class UserService {
      * @param discordUser
      * @private
      */
-    private static async onLoginUpdate(user: User, discordUser: APIUser): Promise<User> {
+    private static async onLoginUpdate(user: User, discordUser: DiscordUser): Promise<User> {
         const userRepository = getConnection().getRepository(User);
         // Update username/email from discord and last login
         user.username = discordUser.username;
@@ -55,7 +55,7 @@ export default class UserService {
         // Build <timezone> (<abrv timezone>), since most users recognize that over the more official one
         return abrvTimezone ? abrvTimezone + ' ('+timezone+')' : timezone;
     }
-    public static getAvatarUrl(discordUser: APIUser): string {
+    public static getAvatarUrl(discordUser: DiscordUser): string {
         let avatarURL = 'https://cdn.discordapp.com/';
         if(discordUser.avatar) {
             avatarURL += 'avatars/' + discordUser.id + '/' + discordUser.avatar
