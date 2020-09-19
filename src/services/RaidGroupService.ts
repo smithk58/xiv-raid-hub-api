@@ -1,8 +1,10 @@
 import { DeleteResult, EntityManager, getConnection, getManager } from "typeorm";
+
+import { validateOrReject } from "class-validator";
+
 import { RaidGroup } from "../repository/entity/RaidGroup";
 import UserService from "./UserService";
 import { RaidGroupCharacter } from "../repository/entity/RaidGroupCharacter";
-import { validateOrReject } from "class-validator";
 import { WeeklyRaidTime } from "../repository/entity/WeeklyRaidTime";
 
 export default class RaidGroupService {
@@ -31,16 +33,19 @@ export default class RaidGroupService {
      * @param raidGroupId
      */
     public static async getRaidGroupWithCharacters(userId: number, raidGroupId: number): Promise<RaidGroup> {
+        // Ensure the raid group exists and they at least have view access
+        const canView = await RaidGroupService.canViewRaidGroup(userId, raidGroupId);
+        if(!canView) {
+            return Promise.resolve(null);
+        }
         const raidGroup = await getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
-            .innerJoin('group.characters', 'characters')
-            .innerJoin('characters.character', 'character')
-            .leftJoin('user_characters', 'usercharacter', 'characters."characterId" = usercharacter."characterId"')
-            .where('"group"."id" = :id AND "group"."ownerId" = :userId', {id: raidGroupId, userId: userId})
-            .orWhere('(group.share = true AND (usercharacter."userId" = :userId AND "isOwner" = true))', {userId: userId})
-            .select(['group', 'characters', 'character'])
-            .orderBy('characters.order')
+            .innerJoin('group.characters', 'raidcharacter')
+            .innerJoin('raidcharacter.character', 'character')
+            .where('"group"."id" = :raidGroupId', {raidGroupId: raidGroupId})
+            .select(['group', 'raidcharacter', 'character'])
+            .orderBy('raidcharacter.order')
             .getOne();
         // TODO do this via addSelectAndMap when typeorm releases in 0.3.0
         if(raidGroup) {
@@ -112,6 +117,27 @@ export default class RaidGroupService {
     }
 
     /**
+     * Removes any characters from a raid group that belong to a particular user.
+     * @param userId
+     * @param raidGroupId
+     */
+    public static async deleteRaidGroupCharactersForUser(userId: number, raidGroupId: number): Promise<RaidGroupCharacter[]> {
+        // Ensure the raid group exists and they at least have view access
+        const canView = await RaidGroupService.canViewRaidGroup(userId, raidGroupId);
+        if(!canView) {
+            return Promise.resolve(null);
+        }
+        const usersCharacters = await getConnection()
+            .getRepository(RaidGroupCharacter)
+            .createQueryBuilder('raidcharacter')
+            .innerJoin('user_characters', 'usercharacters', 'usercharacters."characterId" = raidcharacter."characterId"')
+            .where('usercharacters."userId" = :userId AND "isOwner" = true', {userId: userId})
+            .andWhere('raidcharacter."raidGroupId" = :raidGroupId', {raidGroupId: raidGroupId})
+            .select('raidcharacter')
+            .getMany();
+        return getConnection().getRepository(RaidGroupCharacter).remove(usersCharacters);
+    }
+    /**
      * Deletes all of the raid group characters for a particular raid group.
      * @param entityManager
      * @param raidGroupId
@@ -130,7 +156,7 @@ export default class RaidGroupService {
      * @param raidGroupId
      */
     public static async getWeeklyRaidTimes(userId: number, raidGroupId: number): Promise<WeeklyRaidTime[]> {
-        const canSee = await RaidGroupService.canSeeRaidGroup(userId, raidGroupId);
+        const canSee = await RaidGroupService.canViewRaidGroup(userId, raidGroupId);
         if(!canSee) {
             return Promise.resolve(null);
         }
@@ -200,7 +226,7 @@ export default class RaidGroupService {
             .where('"raidGroupId" = :id', {id: raidGroupId})
             .execute();
     }
-    private static async canSeeRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
+    private static async canViewRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
         return await getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')

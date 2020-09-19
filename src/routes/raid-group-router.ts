@@ -28,7 +28,7 @@ raidGroupRouter.post('/raid-groups', async (ctx: RContext) => {
     ctx.ok(res);
 });
 raidGroupRouter.get('/raid-groups/:id', async (ctx: RContext) => {
-    const raidGroupId = ctx.params.id;
+    const raidGroupId = parseInt(ctx.params.id, 10);
     const raidGroup = await RaidGroupService.getRaidGroupWithCharacters(ctx.session.user.id, raidGroupId);
     if (raidGroup) {
         ctx.ok(raidGroup);
@@ -49,8 +49,17 @@ raidGroupRouter.put('/raid-groups/:id', async (ctx: RContext) => {
 });
 raidGroupRouter.delete('/raid-groups/:id', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
-    const res = await RaidGroupService.deleteRaidGroup(ctx.session.user.id, raidGroupId);
-    if (res && res.affected > 0) {
+    // Attempt to delete the group
+    const deleteGroupRes = await RaidGroupService.deleteRaidGroup(ctx.session.user.id, raidGroupId);
+    const deleteGroupSuccess = deleteGroupRes && deleteGroupRes.affected > 0;
+    // Attempt to remove current users characters from the group instead if they didn't appear to have permission to delete the group
+    let deleteCharactersSuccess = false;
+    if(!deleteGroupRes) {
+        const res = await RaidGroupService.deleteRaidGroupCharactersForUser(ctx.session.user.id, raidGroupId);
+        deleteCharactersSuccess = res && res.length > 0;
+    }
+
+    if (deleteGroupSuccess || deleteCharactersSuccess) {
         ctx.send(204);
     } else {
         ctx.notFound('That raid group no longer exists, or you don\'t have permission to delete it.');

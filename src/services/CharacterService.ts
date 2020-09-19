@@ -18,7 +18,6 @@ export default class CharacterService {
             .select(['uc', 'character'])
             .getMany();
     }
-
     public static async createUserCharacter(userId: number, character: Character): Promise<UserCharacter> {
         const userCharacter = new UserCharacter();
         userCharacter.character = character;
