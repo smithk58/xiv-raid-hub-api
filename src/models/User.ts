@@ -5,7 +5,7 @@ export class User {
         this.avatarURL = avatarURL;
     }
     id: number;
-    username: string
+    username: string;
     avatarURL: string;
     timezone?: string;
 }

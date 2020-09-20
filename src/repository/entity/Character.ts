@@ -1,9 +1,9 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, PrimaryColumn } from "typeorm";
-import { validateOrReject } from "class-validator";
-import { Exclude } from "class-transformer";
+import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, PrimaryColumn } from 'typeorm';
+import { validateOrReject } from 'class-validator';
+import { Exclude } from 'class-transformer';
 
-import { RaidGroup } from "./RaidGroup";
-import { RaidGroupCharacter } from "./RaidGroupCharacter";
+import { RaidGroup } from './RaidGroup';
+import { RaidGroupCharacter } from './RaidGroupCharacter';
 
 @Entity({name: 'characters'})
 export class Character {

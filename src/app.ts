@@ -8,8 +8,8 @@ import 'reflect-metadata'; // required for class-transformer and typeorm
 const respond = require('koa-respond');
 const grant = require('grant').koa();
 const session = require('koa-session');
-import apiRouter from "./routes";
-import { createConnection } from "typeorm";
+import apiRouter from './routes';
+import { createConnection } from 'typeorm';
 
 require('dotenv').config();
 
@@ -38,8 +38,8 @@ app.use(grant(oAuthConfig));
 // Let's us parse JSON requests
 app.use(bodyParser({ // TODO maybe not needed w/ transformAndValidate being used
     enableTypes: ['json'],
-    onerror: function (err, ctx) {
-        ctx.throw('body parse error', 422)
+    onerror: (err, ctx) => {
+        ctx.throw('body parse error', 422);
     }
 }));
 

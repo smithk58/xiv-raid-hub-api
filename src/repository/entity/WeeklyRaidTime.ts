@@ -1,8 +1,8 @@
-import { IsInt, Max, Min } from "class-validator";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
-import { Exclude } from "class-transformer";
+import { IsInt, Max, Min } from 'class-validator';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
-import { RaidGroup } from "./RaidGroup";
+import { RaidGroup } from './RaidGroup';
 
 @Entity({name: 'weekly_raid_times'})
 export class WeeklyRaidTime {

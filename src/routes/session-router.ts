@@ -1,11 +1,11 @@
 import * as Router from '@koa/router';
 import { DefaultState, Context, ParameterizedContext } from 'koa';
 
-import { DiscordApi } from "../services/api-wrappers/discord/discord-api";
+import { DiscordApi } from '../services/api-wrappers/discord/discord-api';
 
-import { Session } from "../models/Session";
-import UserService from "../services/UserService";
-import { User } from "../models/User";
+import { Session } from '../models/Session';
+import UserService from '../services/UserService';
+import { User } from '../models/User';
 
 // Needed for context type shenanigans
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
@@ -38,7 +38,7 @@ sessionRouter.get('/', async (ctx: RContext) => {
     // Figure out the abbreviated timezone (e.g. CST)
     const timezone = UserService.getPrettyTimezone(ctx.query.timezone);
     const user = ctx.session.user;
-    ctx.ok(new Session(user, timezone))
+    ctx.ok(new Session(user, timezone));
 });
 sessionRouter.get('/logout', async (ctx: RContext) => {
     ctx.session = null;

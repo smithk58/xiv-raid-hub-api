@@ -1,4 +1,4 @@
-import { DiscordUser } from "./DiscordUser";
+import { DiscordUser } from './DiscordUser';
 
 const fetch = require('node-fetch');
 
@@ -7,9 +7,9 @@ export abstract class DiscordApi {
     public static async getUser(token: string): Promise<DiscordUser> {
         const url = this.baseURL + '/users/@me';
         const response = await fetch(url, {
-            headers: {'Authorization': 'Bearer ' + token}
+            headers: {Authorization: 'Bearer ' + token}
         });
-        if(response.status !== 200) {
+        if (response.status !== 200) {
             return Promise.reject(response);
         }
         return response.json();

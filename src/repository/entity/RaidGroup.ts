@@ -1,10 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { ArrayMaxSize, ArrayMinSize, IsOptional } from "class-validator";
-import { Exclude, Type } from "class-transformer";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { ArrayMaxSize, ArrayMinSize, IsOptional } from 'class-validator';
+import { Exclude, Type } from 'class-transformer';
 
-import { RaidGroupCharacter } from "./RaidGroupCharacter";
-import { User } from "./User";
-import { WeeklyRaidTime } from "./WeeklyRaidTime";
+import { RaidGroupCharacter } from './RaidGroupCharacter';
+import { User } from './User';
+import { WeeklyRaidTime } from './WeeklyRaidTime';
 
 @Entity({name: 'raid_groups'})
 export class RaidGroup {

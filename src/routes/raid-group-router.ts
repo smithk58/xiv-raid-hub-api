@@ -1,12 +1,12 @@
 // Needed for context type shenanigans
-import { Context, DefaultState, ParameterizedContext } from "koa";
-import * as Router from "@koa/router";
+import { Context, DefaultState, ParameterizedContext } from 'koa';
+import * as Router from '@koa/router';
 
-import { WeeklyRaidTime } from "../repository/entity/WeeklyRaidTime";
-import RaidGroupService from "../services/RaidGroupService";
-import UserService from "../services/UserService";
-import { plainToClass } from "class-transformer";
-import { RaidGroup } from "../repository/entity/RaidGroup";
+import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
+import RaidGroupService from '../services/RaidGroupService';
+import UserService from '../services/UserService';
+import { plainToClass } from 'class-transformer';
+import { RaidGroup } from '../repository/entity/RaidGroup';
 
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
 
@@ -54,7 +54,7 @@ raidGroupRouter.delete('/raid-groups/:id', async (ctx: RContext) => {
     const deleteGroupSuccess = deleteGroupRes && deleteGroupRes.affected > 0;
     // Attempt to remove current users characters from the group instead if they didn't appear to have permission to delete the group
     let deleteCharactersSuccess = false;
-    if(!deleteGroupRes) {
+    if (!deleteGroupRes) {
         const res = await RaidGroupService.deleteRaidGroupCharactersForUser(ctx.session.user.id, raidGroupId);
         deleteCharactersSuccess = res && res.length > 0;
     }

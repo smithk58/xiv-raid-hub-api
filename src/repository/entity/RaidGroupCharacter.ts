@@ -1,10 +1,10 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { IsIn, IsInt, validateOrReject } from "class-validator";
-import { Exclude, Type } from "class-transformer";
+import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { IsIn, IsInt, validateOrReject } from 'class-validator';
+import { Exclude, Type } from 'class-transformer';
 
-import { RaidGroup } from "./RaidGroup";
-import { Character } from "./Character";
-import { XIVClasses } from "../../constants";
+import { RaidGroup } from './RaidGroup';
+import { Character } from './Character';
+import { XIVClasses } from '../../constants';
 
 @Entity({name: 'raid_group_character'})
 export class RaidGroupCharacter {
@@ -22,8 +22,8 @@ export class RaidGroupCharacter {
     @Column()
     order: number;
 
-    @Type(()=> Character)
-    @ManyToOne(type => Character, character => character.raidGroupCharacters,{primary: true, cascade: ['insert']})
+    @Type(() => Character)
+    @ManyToOne(type => Character, character => character.raidGroupCharacters, {primary: true, cascade: ['insert']})
     @JoinColumn({name: 'characterId'})
     character: Character;
 

@@ -1,10 +1,10 @@
-import { Context, DefaultState, ParameterizedContext } from "koa";
-import * as Router from "@koa/router";
+import { Context, DefaultState, ParameterizedContext } from 'koa';
+import * as Router from '@koa/router';
 
-import UserService from "../services/UserService";
-import CharacterService from "../services/CharacterService";
-import { plainToClass } from "class-transformer";
-import { Character } from "../repository/entity/Character";
+import UserService from '../services/UserService';
+import CharacterService from '../services/CharacterService';
+import { plainToClass } from 'class-transformer';
+import { Character } from '../repository/entity/Character';
 
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
 
