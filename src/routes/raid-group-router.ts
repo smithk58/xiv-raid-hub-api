@@ -37,6 +37,15 @@ raidGroupRouter.get('/raid-groups/:id', async (ctx: RContext) => {
     }
 
 });
+raidGroupRouter.post('/raid-groups/:id', async (ctx: RContext) => {
+    const raidGroupId = parseInt(ctx.params.id, 10);
+    const raidGroup = await RaidGroupService.copyRaidGroup(ctx.session.user.id, raidGroupId);
+    if (raidGroup) {
+        ctx.ok(raidGroup);
+    } else {
+        ctx.notFound('That raid group no longer exists, or you don\'t have permission to copy it.');
+    }
+});
 raidGroupRouter.put('/raid-groups/:id', async (ctx: RContext) => {
     const raidGroup = plainToClass(RaidGroup, ctx.request.body);
     raidGroup.id = parseInt(ctx.params.id, 10);

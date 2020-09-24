@@ -70,7 +70,21 @@ export default class RaidGroupService {
         raidGroup.isOwner = true;
         return getConnection().getRepository(RaidGroup).save(raidGroup);
     }
-
+    public static async copyRaidGroup(userId: number, raidGroupId: number): Promise<RaidGroup> {
+        const groupToClone = await RaidGroupService.getRaidGroupWithCharacters(userId, raidGroupId);
+        if (!groupToClone) {
+            return Promise.resolve(null);
+        }
+        delete groupToClone.id;
+        groupToClone.name += ' Copy';
+        groupToClone.hasSchedule = false;
+        groupToClone.share = false;
+        // Assign current user as owner of the new raid group
+        groupToClone.owner = await UserService.getUser(userId);
+        groupToClone.ownerId = userId;
+        groupToClone.isOwner = true;
+        return getConnection().getRepository(RaidGroup).save(groupToClone);
+    }
     /**
      * Updates a raid group and its raid group characters.
      * @param userId - The ID of the user to update the raid group as. Used for permission checking.
