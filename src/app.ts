@@ -23,7 +23,7 @@ if (process.env.NODE_ENV === 'development') {
     app.use(Logger());
     app.use(Cors({credentials: true}));
 } else {
-    app.use(Cors({origin: 'http://www.xivraidhub.com', credentials: true}));
+    app.use(Cors({origin: process.env.FRONTEND_BASE_URL, credentials: true}));
 }
 
 // Use koa-session for session management
