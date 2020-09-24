@@ -67,6 +67,7 @@ export default class RaidGroupService {
         await validateOrReject(raidGroup, {validationError: {target: false}});
         // Assign current user as owner of the new raid group
         raidGroup.owner = await UserService.getUser(userId);
+        raidGroup.isOwner = true;
         return getConnection().getRepository(RaidGroup).save(raidGroup);
     }
 
@@ -88,7 +89,17 @@ export default class RaidGroupService {
             // Delete existing raid group characters, since type ORM can't figure out to do so and runs into a unique constraint error
             await this.deleteRaidGroupCharacters(entityManager, raidGroup.id);
             await entityManager.save(RaidGroup, raidGroup);
-            return entityManager.getRepository(RaidGroup).findOne({id: raidGroup.id});
+            // Have to reselect the the raid group to get owner information
+            const updatedRaidGroup = await entityManager.getRepository(RaidGroup)
+                .createQueryBuilder('group')
+                .where('"group"."id" = :raidGroupId', {raidGroupId: raidGroup.id})
+                .select(['group'])
+                .getOne();
+            // TODO do this via addSelectAndMap when typeorm releases in 0.3.0
+            if (updatedRaidGroup) {
+                updatedRaidGroup.isOwner = updatedRaidGroup.ownerId === userId;
+            }
+            return updatedRaidGroup;
         });
     }
 
