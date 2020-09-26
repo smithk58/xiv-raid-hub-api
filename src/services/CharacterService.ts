@@ -1,18 +1,21 @@
 import { DeleteResult, getConnection } from 'typeorm';
+import { Inject, Singleton } from 'typescript-ioc';
+import { IncomingMessage } from 'http';
+import * as cheerio from 'cheerio';
+import * as https from 'https';
 
 import { UserCharacter } from '../repository/entity/UserCharacter';
-import UserService from './UserService';
 import { Character } from '../repository/entity/Character';
-import { IncomingMessage } from 'http';
-const cheerio = require('cheerio');
-const https = require('https');
+import { UserService } from './UserService';
 
-export default class CharacterService {
+@Singleton
+export class CharacterService {
+    @Inject private userService: UserService;
     /**
      * Returns all of the characters for the specified user.
      * @param userId - The ID of the user to get characters for.
      */
-    public static async getUserCharacters(userId: number): Promise<UserCharacter[]> {
+    public async getUserCharacters(userId: number): Promise<UserCharacter[]> {
         return getConnection()
             .getRepository(UserCharacter)
             .createQueryBuilder('uc')
@@ -29,12 +32,12 @@ export default class CharacterService {
      * @param userId - The ID of the user to add a character to.
      * @param character - The ID of the character to add.
      */
-    public static async createUserCharacter(userId: number, character: Character): Promise<UserCharacter> {
+    public async createUserCharacter(userId: number, character: Character): Promise<UserCharacter> {
         const userCharacter = new UserCharacter();
         userCharacter.character = character;
         userCharacter.defaultClass = character.defaultClass;
         // Assign current user as owner of the character
-        userCharacter.user = await UserService.getUser(userId);
+        userCharacter.user = await this.userService.getUser(userId);
         return getConnection().getRepository(UserCharacter).save(userCharacter);
     }
 
@@ -44,7 +47,7 @@ export default class CharacterService {
      * @param userId - The ID of the user to update the character for.
      * @param character - THe ID of the character to update.
      */
-    public static async updateUserCharacter(userId: number, character: Character): Promise<UserCharacter> {
+    public async updateUserCharacter(userId: number, character: Character): Promise<UserCharacter> {
         // Get current users existing character and search for a possible owner
         const existingCharacter = await getConnection()
             .getRepository(UserCharacter)
@@ -71,7 +74,7 @@ export default class CharacterService {
      * @param userId - The ID of the user to delete the character from.
      * @param characterId - The ID of the character to delete.
      */
-    public static async deleteUserCharacter(userId: number, characterId: number): Promise<DeleteResult> {
+    public async deleteUserCharacter(userId: number, characterId: number): Promise<DeleteResult> {
         return getConnection()
             .createQueryBuilder()
             .delete()
@@ -85,7 +88,7 @@ export default class CharacterService {
      * @param userId - The ID of the user to confirm the character for.
      * @param characterId - The ID of the character to confirm.
      */
-    public static async confirmCharacter(userId: number, characterId: number): Promise<boolean> {
+    public async confirmCharacter(userId: number, characterId: number): Promise<boolean> {
         const character = await getConnection()
             .getRepository(UserCharacter)
             .createQueryBuilder('uc')
@@ -113,7 +116,7 @@ export default class CharacterService {
      * @param characterId - The ID of the character whose profile you want to check.
      * @param targetString - The string to search for in the profile.
      */
-    private static async checkLodestoneProfileForString(characterId: number, targetString: string): Promise<boolean> {
+    private async checkLodestoneProfileForString(characterId: number, targetString: string): Promise<boolean> {
         return new Promise((resolve, reject) => {
             const req = https.get('https://na.finalfantasyxiv.com/lodestone/character/' + characterId, (response: IncomingMessage) => {
                 // Build the response

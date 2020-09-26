@@ -13,6 +13,7 @@
   "dependencies": {
     "@koa/cors": "^3.1.0",
     "@koa/router": "^8.0.8",
+    "@types/cheerio": "^0.22.22",
     "@types/http-status-codes": "^1.2.0",
     "@types/koa": "^2.11.4",
     "@types/koa-bodyparser": "^4.3.0",
@@ -40,7 +41,8 @@
     "node-fetch": "^2.6.0",
     "pg": "^8.3.3",
     "reflect-metadata": "^0.1.10",
-    "typeorm": "0.2.25"
+    "typeorm": "0.2.25",
+    "typescript-ioc": "^3.2.2"
   },
   "private": true,
   "devDependencies": {

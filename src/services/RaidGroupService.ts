@@ -1,20 +1,22 @@
 import { DeleteResult, EntityManager, getConnection, getManager } from 'typeorm';
-
 import { validateOrReject } from 'class-validator';
+import { Inject, Singleton } from 'typescript-ioc';
 
 import { RaidGroup } from '../repository/entity/RaidGroup';
-import UserService from './UserService';
 import { RaidGroupCharacter } from '../repository/entity/RaidGroupCharacter';
 import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
+import { UserService } from './UserService';
 
-export default class RaidGroupService {
+@Singleton
+export class RaidGroupService {
+    @Inject private userService: UserService;
     /**
      * Returns all raid groups a particular user is allowed to see, but not necessarily edit. A user is allowed to see raid groups they
      * created, and raid groups that others created that have 'share' enabled, and have a character in them that is confirmed to be owned
      * by the provided user.
      * @param userId - The ID of the user to get raids groups for.
      */
-    public static getRaidGroups(userId: number): Promise<RaidGroup[]> {
+    public getRaidGroups(userId: number): Promise<RaidGroup[]> {
         // Get all raid groups that are owned by this user, or are shared and they own a character in the static
         // Also filter on accepted status (whether or not they've opted in to being a member of the raid group, or haven't chosen yet)
         return getConnection()
@@ -34,9 +36,9 @@ export default class RaidGroupService {
      * @param userId - The ID of the user you're getting the raid group for. Used for permission checking.
      * @param raidGroupId - The ID of the raid group you want to get.
      */
-    public static async getRaidGroupWithCharacters(userId: number, raidGroupId: number): Promise<RaidGroup> {
+    public async getRaidGroupWithCharacters(userId: number, raidGroupId: number): Promise<RaidGroup> {
         // Ensure the raid group exists and they at least have view access
-        const canView = await RaidGroupService.canViewRaidGroup(userId, raidGroupId);
+        const canView = await this.canViewRaidGroup(userId, raidGroupId);
         if (!canView) {
             return Promise.resolve(null);
         }
@@ -60,18 +62,18 @@ export default class RaidGroupService {
      * @param userId - The ID of the user to create the raid group for.
      * @param raidGroup - The raid group to insert for the user.
      */
-    public static async createRaidGroup(userId: number, raidGroup: RaidGroup): Promise<RaidGroup> {
+    public async createRaidGroup(userId: number, raidGroup: RaidGroup): Promise<RaidGroup> {
         delete raidGroup.id;
         // TODO Validate characters in raid group are unique
         // Have to call validateOrReject ourselves, since changes in length of characters[] don't trigger @BeforeInsert() or @BeforeUpdate()
         await validateOrReject(raidGroup, {validationError: {target: false}});
         // Assign current user as owner of the new raid group
-        raidGroup.owner = await UserService.getUser(userId);
+        raidGroup.owner = await this.userService.getUser(userId);
         raidGroup.isOwner = true;
         return getConnection().getRepository(RaidGroup).save(raidGroup);
     }
-    public static async copyRaidGroup(userId: number, raidGroupId: number): Promise<RaidGroup> {
-        const groupToClone = await RaidGroupService.getRaidGroupWithCharacters(userId, raidGroupId);
+    public async copyRaidGroup(userId: number, raidGroupId: number): Promise<RaidGroup> {
+        const groupToClone = await this.getRaidGroupWithCharacters(userId, raidGroupId);
         if (!groupToClone) {
             return Promise.resolve(null);
         }
@@ -80,7 +82,7 @@ export default class RaidGroupService {
         groupToClone.hasSchedule = false;
         groupToClone.share = false;
         // Assign current user as owner of the new raid group
-        groupToClone.owner = await UserService.getUser(userId);
+        groupToClone.owner = await this.userService.getUser(userId);
         groupToClone.ownerId = userId;
         groupToClone.isOwner = true;
         return getConnection().getRepository(RaidGroup).save(groupToClone);
@@ -90,10 +92,10 @@ export default class RaidGroupService {
      * @param userId - The ID of the user to update the raid group as. Used for permission checking.
      * @param raidGroup - The raid group to update.
      */
-    public static async updateRaidGroup(userId: number, raidGroup: RaidGroup) {
+    public async updateRaidGroup(userId: number, raidGroup: RaidGroup) {
         // TODO Validate characters in raid group are unique
         // Ensure the raid group exists and they can edit it before continuing
-        const canEdit = await RaidGroupService.canEditRaidGroup(userId, raidGroup.id);
+        const canEdit = await this.canEditRaidGroup(userId, raidGroup.id);
         if (!canEdit) {
             return Promise.resolve(null);
         }
@@ -122,9 +124,9 @@ export default class RaidGroupService {
      * @param userId - The ID of the user to delete the raid group as. Used for permission checking.
      * @param raidGroupId - The ID of the raid group to delete.
      */
-    public static async deleteRaidGroup(userId: number, raidGroupId: number): Promise<DeleteResult> {
+    public async deleteRaidGroup(userId: number, raidGroupId: number): Promise<DeleteResult> {
         // Ensure the raid group exists and they can edit it before continuing
-        const canEdit = await RaidGroupService.canEditRaidGroup(userId, raidGroupId);
+        const canEdit = await this.canEditRaidGroup(userId, raidGroupId);
         if (!canEdit) {
             return Promise.resolve(null);
         }
@@ -148,10 +150,10 @@ export default class RaidGroupService {
      * @param userId - The ID of the user to delete raid group characters for.
      * @param raidGroupId - The ID of the raid group to remove characters from.
      */
-    public static async deleteRaidGroupCharactersForUser(userId: number, raidGroupId: number): Promise<RaidGroupCharacter[]> {
+    public async deleteRaidGroupCharactersForUser(userId: number, raidGroupId: number): Promise<RaidGroupCharacter[]> {
         // TODO Flag/notification on raid group noting that it has too few characters now
         // Ensure the raid group exists and they at least have view access
-        const canView = await RaidGroupService.canViewRaidGroup(userId, raidGroupId);
+        const canView = await this.canViewRaidGroup(userId, raidGroupId);
         if (!canView) {
             return Promise.resolve(null);
         }
@@ -170,7 +172,7 @@ export default class RaidGroupService {
      * @param entityManager - The entity manager for a transaction.
      * @param raidGroupId - The ID of the raid group to remove all characters from.
      */
-    private static async deleteRaidGroupCharacters(entityManager: EntityManager, raidGroupId: number): Promise<DeleteResult> {
+    private async deleteRaidGroupCharacters(entityManager: EntityManager, raidGroupId: number): Promise<DeleteResult> {
         return entityManager.createQueryBuilder()
             .delete()
             .from(RaidGroupCharacter)
@@ -182,8 +184,8 @@ export default class RaidGroupService {
      * @param userId - The ID of the user you want the raid times for. Used for permission checking.
      * @param raidGroupId. The ID of the raid group you want raid times for.
      */
-    public static async getWeeklyRaidTimes(userId: number, raidGroupId: number): Promise<WeeklyRaidTime[]> {
-        const canSee = await RaidGroupService.canViewRaidGroup(userId, raidGroupId);
+    public async getWeeklyRaidTimes(userId: number, raidGroupId: number): Promise<WeeklyRaidTime[]> {
+        const canSee = await this.canViewRaidGroup(userId, raidGroupId);
         if (!canSee) {
             return Promise.resolve(null);
         }
@@ -198,7 +200,7 @@ export default class RaidGroupService {
      * Returns the weekly raid times for a particular user.
      * @param userId - The ID of the user you want all raid times for.
      */
-    public static async getAllWeeklyRaidTimes(userId: number): Promise<WeeklyRaidTime[]> {
+    public async getAllWeeklyRaidTimes(userId: number): Promise<WeeklyRaidTime[]> {
         return getConnection()
             .getRepository(WeeklyRaidTime)
             .createQueryBuilder('wrt')
@@ -216,9 +218,9 @@ export default class RaidGroupService {
      * @param raidGroupId - The ID of the raid group to set the raid times for.
      * @param raidTimes - The list of new raid times for the specified raid group.
      */
-    public static async updateWeeklyRaidTimes(userId: number, raidGroupId: number, raidTimes: WeeklyRaidTime[]): Promise<WeeklyRaidTime[]> {
+    public async updateWeeklyRaidTimes(userId: number, raidGroupId: number, raidTimes: WeeklyRaidTime[]): Promise<WeeklyRaidTime[]> {
         // Ensure the raid group exists and they can edit it before continuing
-        const canEdit = await RaidGroupService.canEditRaidGroup(userId, raidGroupId);
+        const canEdit = await this.canEditRaidGroup(userId, raidGroupId);
         if (!canEdit) {
             return Promise.resolve(null);
         }
@@ -251,7 +253,7 @@ export default class RaidGroupService {
      * @param entityManager - The entity manager for a transaction.
      * @param raidGroupId - The ID of the raid group to delete all raid times for.
      */
-    private static async deleteWeeklyRaidTimes(entityManager: EntityManager, raidGroupId: number): Promise<DeleteResult> {
+    private async deleteWeeklyRaidTimes(entityManager: EntityManager, raidGroupId: number): Promise<DeleteResult> {
         return entityManager.createQueryBuilder()
             .delete()
             .from(WeeklyRaidTime)
@@ -264,7 +266,7 @@ export default class RaidGroupService {
      * @param userId - The ID of the user to check permissions for.
      * @param raidGroupId - The ID of the raid group to check against.
      */
-    private static async canViewRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
+    private async canViewRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
         return await getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
@@ -280,7 +282,7 @@ export default class RaidGroupService {
      * @param userId - The ID of the user to check permission for.
      * @param raidGroupId - The ID of the raid group to check against.
      */
-    private static async canEditRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
+    private async canEditRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
         return await getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder()

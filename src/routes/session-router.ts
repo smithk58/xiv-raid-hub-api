@@ -1,15 +1,16 @@
 import * as Router from '@koa/router';
 import { DefaultState, Context, ParameterizedContext } from 'koa';
 
+import { Session } from '../models/Session';
+import { User } from '../models/User';
+import { UserService } from '../services/UserService';
 import { DiscordApi } from '../services/api-wrappers/discord/discord-api';
 
-import { Session } from '../models/Session';
-import UserService from '../services/UserService';
-import { User } from '../models/User';
+const discordApi = new DiscordApi();
+const userService = new UserService();
 
 // Needed for context type shenanigans
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
-
 const routerOpts: Router.RouterOptions = {prefix: '/session'};
 const sessionRouter: Router = new Router<DefaultState, Context>(routerOpts);
 /**
@@ -20,15 +21,15 @@ sessionRouter.get('/login', async (ctx: RContext) => {
     // Attempt to resolve the discord user if we have an access token
     const oauthGrant = ctx.session.grant;
     if (oauthGrant) {
-        const discordUser = await DiscordApi.getUser(oauthGrant.response.access_token).catch(() => {});
+        const discordUser = await discordApi.getUser(oauthGrant.response.access_token).catch(() => {});
         delete ctx.session.grant; // don't want the grant to persist in the session for now
         if (discordUser) {
-            const user = await UserService.login(discordUser);
+            const user = await userService.login(discordUser);
             // Persist some basic stuff to the session
             ctx.session.user = new User(
                 user.id,
                 user.username,
-                UserService.getAvatarUrl(discordUser)
+                userService.getAvatarUrl(discordUser)
             );
         }
     }
@@ -36,7 +37,7 @@ sessionRouter.get('/login', async (ctx: RContext) => {
 });
 sessionRouter.get('/', async (ctx: RContext) => {
     // Figure out the abbreviated timezone (e.g. CST)
-    const timezone = UserService.getPrettyTimezone(ctx.query.timezone);
+    const timezone = userService.getPrettyTimezone(ctx.query.timezone);
     const user = ctx.session.user;
     ctx.ok(new Session(user, timezone));
 });

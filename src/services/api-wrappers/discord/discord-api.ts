@@ -1,11 +1,12 @@
 import { DiscordUser } from './DiscordUser';
+import { Singleton } from 'typescript-ioc';
+import fetch from 'node-fetch';
 
-const fetch = require('node-fetch');
-
-export abstract class DiscordApi {
+@Singleton
+export class DiscordApi {
     private static baseURL = 'https://discord.com/api/v6';
-    public static async getUser(token: string): Promise<DiscordUser> {
-        const url = this.baseURL + '/users/@me';
+    public async getUser(token: string): Promise<DiscordUser> {
+        const url = DiscordApi.baseURL + '/users/@me';
         const response = await fetch(url, {
             headers: {Authorization: 'Bearer ' + token}
         });
