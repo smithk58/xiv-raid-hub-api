@@ -42,7 +42,8 @@
     "pg": "^8.3.3",
     "reflect-metadata": "^0.1.10",
     "typeorm": "0.2.25",
-    "typescript-ioc": "^3.2.2"
+    "typescript-ioc": "^3.2.2",
+    "uuid-apikey": "^1.4.6"
   },
   "private": true,
   "devDependencies": {
