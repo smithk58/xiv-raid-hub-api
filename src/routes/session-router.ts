@@ -24,18 +24,23 @@ sessionRouter.get('/login', async (ctx: RContext) => {
         const discordUser = await discordApi.getUser(oauthGrant.response.access_token).catch(() => {});
         delete ctx.session.grant; // don't want the grant to persist in the session for now
         if (discordUser) {
-            const user = await userService.login(discordUser);
+            const user = await userService.login(discordUser, ctx.session.timezone);
             // Persist some basic stuff to the session
             ctx.session.user = new User(
                 user.id,
                 user.username,
-                userService.getAvatarUrl(discordUser)
+                userService.getAvatarUrl(discordUser),
+                user.timezone
             );
         }
     }
     ctx.redirect(process.env.FRONTEND_BASE_URL ? process.env.FRONTEND_BASE_URL : process.env.BACKEND_BASE_URL);
 });
+/**
+ * Made on page load and after session changes (e.g. login/logout) to give misc. session information.
+ */
 sessionRouter.get('/', async (ctx: RContext) => {
+    ctx.session.timezone = ctx.query.timezone;
     // Figure out the abbreviated timezone (e.g. CST)
     const timezone = userService.getPrettyTimezone(ctx.query.timezone);
     const user = ctx.session.user;

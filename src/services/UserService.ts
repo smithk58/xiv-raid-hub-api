@@ -11,17 +11,15 @@ export class UserService {
     /**
      * Logs in the specified discord user. Creates or updates a user with the discord users information.
      * @param discordUser - The discord user to login as.
+     * @param timezone - The users timezone.
      */
-    public async login(discordUser: DiscordUser): Promise<User> {
-        const userRepository = getConnection().getRepository(User);
+    public async login(discordUser: DiscordUser, timezone: string): Promise<User> {
         // Check if user exists, if so return their details, otherwise create a user for them
-        const existingUser = await userRepository.findOne( {
-            discordId: discordUser.id
-        });
+        const existingUser = await this.getUserByDiscordId(discordUser.id);
         if (existingUser) {
-           return this.onLoginUpdate(existingUser, discordUser);
+           return this.onLoginUpdate(existingUser, discordUser, timezone);
         } else {
-            return this.createUser(discordUser);
+            return this.createUser(discordUser, timezone);
         }
     }
 
@@ -30,15 +28,20 @@ export class UserService {
      * @param userId - The ID of the user to retrieve.
      */
     public async getUser(userId: number): Promise<User> {
-        return getConnection().getRepository(User).findOne(userId);
+        return getConnection().getRepository(User).findOne({id: userId});
 
     }
-
+    public async getUserByDiscordId(discordId: string): Promise<User> {
+        return getConnection().getRepository(User).findOne( {
+            discordId
+        });
+    }
     /**
      * Creates a user from the specified discord user.
      * @param discordUser - The discord user to create a user from.
+     * @param timezone - The users timezone.
      */
-    public async createUser(discordUser: DiscordUser): Promise<User> {
+    public async createUser(discordUser: DiscordUser, timezone: string): Promise<User> {
         const userRepository = getConnection().getRepository(User);
         const user = new User();
         user.discordId = discordUser.id;
@@ -46,6 +49,9 @@ export class UserService {
         user.email = discordUser.email;
         user.createdOn = new Date();
         user.lastLogin = new Date();
+        if (this.isValidTimezone(timezone)) {
+            user.timezone = timezone;
+        }
         return userRepository.save(user);
     }
 
@@ -53,12 +59,16 @@ export class UserService {
      * Updates properties on the user that should be checked/updated on every login.
      * @param user - The user to update.
      * @param discordUser - The discord user to use as a source for update values.
+     * @param timezone - The users timezone.
      */
-    private async onLoginUpdate(user: User, discordUser: DiscordUser): Promise<User> {
+    private async onLoginUpdate(user: User, discordUser: DiscordUser, timezone: string): Promise<User> {
         const userRepository = getConnection().getRepository(User);
         // Update username/email from discord and last login
         user.username = discordUser.username;
         user.email = discordUser.email;
+        if (this.isValidTimezone(timezone)) {
+            user.timezone = timezone;
+        }
         user.lastLogin = new Date();
         return userRepository.save(user);
     }
@@ -68,9 +78,12 @@ export class UserService {
      * @param timezone - The timezone to get a pretty timezone for.
      */
     public getPrettyTimezone(timezone: string): string {
-        const abrvTimezone = timezone ? moment().tz(timezone).format('z') : timezone;
         // Build <timezone> (<abrv timezone>), since most users recognize that over the more official one
-        return abrvTimezone ? abrvTimezone + ' (' + timezone + ')' : timezone;
+        let abrvTimezone = timezone;
+        if (this.isValidTimezone(timezone)) {
+            abrvTimezone = moment().tz(timezone).format('z') + ' (' + timezone + ')';
+        }
+        return abrvTimezone;
     }
 
     /**
@@ -87,7 +100,9 @@ export class UserService {
         }
         return avatarURL + '.png?size=128';
     }
-
+    public isValidTimezone(timezone: string): boolean {
+        return moment.tz.zone(timezone) != null;
+    }
     /**
      * Checks the current session for a user, and throws a 401 if one isn't found.
      * @param ctx - The context to search for a user session on.

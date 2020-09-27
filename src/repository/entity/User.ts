@@ -19,6 +19,9 @@ export class User {
     @Column({length: 255})
     email: string;
 
+    @Column({length: 50, nullable: true})
+    timezone: string;
+
     @Column({type: 'timestamp'})
     createdOn: Date;
 
