@@ -4,10 +4,10 @@ import * as Helmet from 'koa-helmet';
 import * as Logger from 'koa-logger';
 import * as Cors from '@koa/cors';
 import * as bodyParser from 'koa-bodyparser';
+import * as session from 'koa-session';
 import 'reflect-metadata'; // required for class-transformer and typeorm
 const respond = require('koa-respond');
 const grant = require('grant').koa();
-const session = require('koa-session');
 import apiRouter from './routes';
 import { createConnection } from 'typeorm';
 

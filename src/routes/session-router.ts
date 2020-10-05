@@ -5,9 +5,10 @@ import { Session } from '../models/Session';
 import { User } from '../models/User';
 import { UserService } from '../services/UserService';
 import { DiscordApi } from '../services/api-wrappers/discord/discord-api';
+import { Container } from 'typescript-ioc';
 
-const discordApi = new DiscordApi();
-const userService = new UserService();
+const discordApi: DiscordApi = Container.get(DiscordApi);
+const userService: UserService = Container.get(UserService);
 
 // Needed for context type shenanigans
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
@@ -22,7 +23,6 @@ sessionRouter.get('/login', async (ctx: RContext) => {
     const oauthGrant = ctx.session.grant;
     if (oauthGrant) {
         const discordUser = await discordApi.getUser(oauthGrant.response.access_token).catch(() => {});
-        delete ctx.session.grant; // don't want the grant to persist in the session for now
         if (discordUser) {
             const user = await userService.login(discordUser, ctx.session.timezone);
             // Persist some basic stuff to the session

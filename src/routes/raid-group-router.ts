@@ -7,13 +7,14 @@ import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
 import { RaidGroup } from '../repository/entity/RaidGroup';
 import { UserService } from '../services/UserService';
 import { RaidGroupService } from '../services/RaidGroupService';
+import { Container } from 'typescript-ioc';
 
-const raidGroupService = new RaidGroupService();
-const userService = new UserService();
+const raidGroupService: RaidGroupService = Container.get(RaidGroupService);
+const userService: UserService = Container.get(UserService);
 
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
 
-const routerOpts: Router.RouterOptions = {};
+const routerOpts: Router.RouterOptions = {prefix: '/raid-groups'};
 const raidGroupRouter: Router = new Router<DefaultState, Context>(routerOpts);
 // Protect these routes
 raidGroupRouter.use(async (ctx: RContext, next) => {
@@ -21,16 +22,16 @@ raidGroupRouter.use(async (ctx: RContext, next) => {
     return next();
 });
 
-raidGroupRouter.get('/raid-groups', async (ctx: RContext) => {
+raidGroupRouter.get('/', async (ctx: RContext) => {
     const raidGroups = await raidGroupService.getRaidGroups(ctx.session.user.id);
     ctx.ok(raidGroups);
 });
-raidGroupRouter.post('/raid-groups', async (ctx: RContext) => {
+raidGroupRouter.post('/', async (ctx: RContext) => {
     const raidGroup = plainToClass(RaidGroup, ctx.request.body);
     const res = await raidGroupService.createRaidGroup(ctx.session.user.id, raidGroup);
     ctx.ok(res);
 });
-raidGroupRouter.get('/raid-groups/:id', async (ctx: RContext) => {
+raidGroupRouter.get('/:id', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
     const raidGroup = await raidGroupService.getRaidGroupWithCharacters(ctx.session.user.id, raidGroupId);
     if (raidGroup) {
@@ -40,7 +41,7 @@ raidGroupRouter.get('/raid-groups/:id', async (ctx: RContext) => {
     }
 
 });
-raidGroupRouter.post('/raid-groups/:id', async (ctx: RContext) => {
+raidGroupRouter.post('/:id', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
     const raidGroup = await raidGroupService.copyRaidGroup(ctx.session.user.id, raidGroupId);
     if (raidGroup) {
@@ -49,7 +50,7 @@ raidGroupRouter.post('/raid-groups/:id', async (ctx: RContext) => {
         ctx.notFound('That raid group no longer exists, or you don\'t have permission to copy it.');
     }
 });
-raidGroupRouter.put('/raid-groups/:id', async (ctx: RContext) => {
+raidGroupRouter.put('/:id', async (ctx: RContext) => {
     const raidGroup = plainToClass(RaidGroup, ctx.request.body);
     raidGroup.id = parseInt(ctx.params.id, 10);
     const res = await raidGroupService.updateRaidGroup(ctx.session.user.id, raidGroup);
@@ -59,7 +60,7 @@ raidGroupRouter.put('/raid-groups/:id', async (ctx: RContext) => {
         ctx.notFound('That raid group no longer exists, or you don\'t have permission to update it.');
     }
 });
-raidGroupRouter.delete('/raid-groups/:id', async (ctx: RContext) => {
+raidGroupRouter.delete('/:id', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
     // Attempt to delete the group
     const deleteGroupRes = await raidGroupService.deleteRaidGroup(ctx.session.user.id, raidGroupId);
@@ -77,7 +78,7 @@ raidGroupRouter.delete('/raid-groups/:id', async (ctx: RContext) => {
         ctx.notFound('That raid group no longer exists, or you don\'t have permission to delete it.');
     }
 });
-raidGroupRouter.get('/raid-groups/:id/raidTimes', async (ctx: RContext) => {
+raidGroupRouter.get('/:id/raid-times', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
     const res = await raidGroupService.getWeeklyRaidTimes(ctx.session.user.id, raidGroupId);
     if (res) {
@@ -86,18 +87,10 @@ raidGroupRouter.get('/raid-groups/:id/raidTimes', async (ctx: RContext) => {
         ctx.notFound('That raid group no longer exists, or you don\'t have permission to see its schedule.');
     }
 });
-raidGroupRouter.put('/raid-groups/:id/raidTimes', async (ctx: RContext) => {
+raidGroupRouter.put('/:id/raid-times', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
     const raidTimes: WeeklyRaidTime[] = plainToClass<WeeklyRaidTime, WeeklyRaidTime>(WeeklyRaidTime, ctx.request.body);
     const res = await raidGroupService.updateWeeklyRaidTimes(ctx.session.user.id, raidGroupId, raidTimes);
-    if (res) {
-        ctx.ok(res);
-    } else {
-        ctx.notFound('That raid group no longer exists, or you don\'t have permission to see its schedule.');
-    }
-});
-raidGroupRouter.get('/raidTimes', async (ctx: RContext) => {
-    const res = await raidGroupService.getAllWeeklyRaidTimes(ctx.session.user.id);
     if (res) {
         ctx.ok(res);
     } else {

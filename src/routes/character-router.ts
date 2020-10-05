@@ -5,9 +5,10 @@ import { plainToClass } from 'class-transformer';
 import { Character } from '../repository/entity/Character';
 import { CharacterService } from '../services/CharacterService';
 import { UserService } from '../services/UserService';
+import { Container } from 'typescript-ioc';
 
-const characterService = new CharacterService();
-const userService = new UserService();
+const characterService: CharacterService = Container.get(CharacterService);
+const userService: UserService = Container.get(UserService);
 
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
 const routerOpts: Router.RouterOptions = {prefix: '/characters'};

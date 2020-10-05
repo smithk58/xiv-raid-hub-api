@@ -7,7 +7,8 @@
     "key": "746485131534925974",
     "scope": [
       "identify",
-      "email"
+      "email",
+      "guilds"
     ]
   }
 }

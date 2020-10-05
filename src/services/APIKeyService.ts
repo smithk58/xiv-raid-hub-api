@@ -1,9 +1,8 @@
 import { getConnection } from 'typeorm';
-import { Inject, Singleton } from 'typescript-ioc';
+import { Singleton } from 'typescript-ioc';
 
-import { UserService } from './UserService';
 import { APIAccess } from '../repository/entity/APIAccess';
-import { RContext } from '../routes/raid-group-router';
+import { RContext } from '../routes/guilds-router';
 
 @Singleton
 export class APIKeyService {
@@ -16,7 +15,7 @@ export class APIKeyService {
         const apiKey = ctx.query.api_key;
         const apiKeyMap = await this.getAPIKeyMap();
         const isValid = typeof(apiKeyMap[apiKey]) !== 'undefined';
-        if (isValid) {
+        if (!isValid) {
             ctx.send(401);
             ctx.res.end();
         }
