@@ -16,7 +16,7 @@ export class APIKeyService {
         const apiKeyMap = await this.getAPIKeyMap();
         const isValid = typeof(apiKeyMap[apiKey]) !== 'undefined';
         if (!isValid) {
-            ctx.send(401);
+            ctx.unauthorized();
             ctx.res.end();
         }
     }

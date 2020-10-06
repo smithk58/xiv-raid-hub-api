@@ -34,7 +34,7 @@ sessionRouter.get('/login', async (ctx: RContext) => {
             );
         }
     }
-    ctx.redirect(process.env.FRONTEND_BASE_URL ? process.env.FRONTEND_BASE_URL : process.env.BACKEND_BASE_URL);
+    ctx.redirect(process.env.FRONTEND_BASE_URL);
 });
 /**
  * Made on page load and after session changes (e.g. login/logout) to give misc. session information.

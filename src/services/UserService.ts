@@ -111,7 +111,7 @@ export class UserService {
         // tslint:disable-next-line:max-line-length
         // TODO Actual auth/route protection using JWT, this is just memes, https://stackoverflow.com/questions/63048522/protect-only-certain-routes-with-koa-jwt
         if (!ctx.session || !ctx.session.user) {
-            ctx.send(401);
+            ctx.unauthorized ();
             ctx.res.end();
         }
     }

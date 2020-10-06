@@ -1,6 +1,5 @@
 import { Singleton } from 'typescript-ioc';
 import fetch, { Response } from 'node-fetch';
-import { DiscordGuild } from './discord/DiscordGuild';
 import { URL } from 'url';
 
 @Singleton
@@ -27,7 +26,7 @@ export class BotApi {
      * @param queryParams - Extra query params to add to the request.
      */
     private createUrl(path: string, queryParams?: Record<string, string>): URL {
-        const baseUrl = process.env.BOT_BASE_URL;
+        const baseUrl = process.env.BOT_BASE_URL || 'https://bot.xivraidhub.com';
         const url = new URL(baseUrl + '/api' + path);
         // Append query params
         const params = queryParams ? queryParams : {};
