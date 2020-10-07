@@ -34,7 +34,8 @@ sessionRouter.get('/login', async (ctx: RContext) => {
             );
         }
     }
-    ctx.redirect(process.env.FRONTEND_BASE_URL);
+    const frontendURL = process.env.FRONTEND_BASE_URL || 'https://www.xivraidhub.com/';
+    ctx.redirect(frontendURL);
 });
 /**
  * Made on page load and after session changes (e.g. login/logout) to give misc. session information.

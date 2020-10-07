@@ -10,6 +10,8 @@ const respond = require('koa-respond');
 const grant = require('grant').koa();
 import apiRouter from './routes';
 import { createConnection } from 'typeorm';
+import { checkOriginAgainstWhitelist } from './utility-middleware/origin-whitelist';
+import { handleError } from './utility-middleware/error-handler';
 
 require('dotenv').config();
 
@@ -17,20 +19,22 @@ const app: Koa = new Koa();
 app.keys = [process.env.APP_SECRET_KEY];
 // Security
 app.use(Helmet());
-
+// Generic error handling middleware.
+app.use(handleError);
 // Logger and CORS for local dev
 if (process.env.NODE_ENV === 'development') {
     app.use(Logger());
     app.use(Cors({credentials: true}));
 } else {
-    app.use(Cors({origin: process.env.FRONTEND_BASE_URL, credentials: true}));
+    const whitelist = process.env.ALLOWED_ORIGINS ? JSON.parse(process.env.ALLOWED_ORIGINS) : ['https://www.xivraidhub.com', 'https://bot.xivraidhub.com'];
+    app.use(Cors({credentials: true, origin: checkOriginAgainstWhitelist(whitelist)}));
 }
 
 // Use koa-session for session management
 app.use(session(app));
 
 // Use grant for oauth 2 handling
-const baseURL = process.env.BACKEND_BASE_URL;
+const baseURL = process.env.BACKEND_BASE_URL || 'https://api.xivhub.com';
 const oAuthConfig = require('./config.json');
 oAuthConfig.defaults.origin = baseURL;
 oAuthConfig.discord.callback = '/api/session/login';
@@ -48,25 +52,6 @@ app.use(bodyParser({ // TODO maybe not needed w/ transformAndValidate being used
 // Easier responses https://www.npmjs.com/package/koa-respond
 app.use(respond());
 
-// Generic error handling middleware.
-app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
-    try {
-        await next();
-    } catch (error) {
-        // TODO hacky, need better way to detect validator errors.
-        const isValidatorError = Array.isArray(error) && error.length > 0 && error[0].constraints;
-        if (isValidatorError) {
-            ctx.status = 400;
-            ctx.body = error.toString();
-            // TODO Better for frontend to specifically parse these apart, but this is decent enough for now
-        } else {
-            ctx.status = error.statusCode || error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-            ctx.body = error.message || error.toString();
-        }
-
-        ctx.app.emit('error', error, ctx);
-    }
-});
 // Create connection to DB
 createConnection();
 // Routes

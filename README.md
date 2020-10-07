@@ -22,12 +22,12 @@ Put these values in a [`.env`](https://www.npmjs.com/package/dotenv) file or in 
 
 * `APP_SECRET_KEY` - A large random key, used for securing cookies.
 * `DISCORD_CLIENT_SECRET` - The secret key for a discord app. Will be used when authentication users for this application via discords oauth.
-* `FRONTEND_BASE_URL` - Users will be redirected here after authenticating with discord
-* `BACKEND_BASE_URL` - Sent to discord as the origin when authentication.
-* `ALLOWED_ORIGIN` - Restricts webservers origin in prod.
 * `DB_URL` - A connection string for a postgres DB to manage the application.
 * `XIV_RAID_HUB_BOT_API_KEY` - A valid API key for the bots API.
 ### Optional
 
 * `NODE_DEV` = `development`, for dev, otherwise assumes production
-* `BOT_BASE_URL` - override for base URL to use for the bot. Defaults to https://bot.xivraidhub.com.
+* `BACKEND_BASE_URL` - Sent to discord as the origin when authentication. Defaults to `https://api.xivhub.com`.
+* `BOT_BASE_URL` - override for base URL to use for the bots API. Defaults to `https://bot.xivraidhub.com`.
+* `FRONTEND_BASE_URL` - Users will be redirected here after authenticating with discord. Defaults to `https://www.xivraidhub.com`.
+* `ALLOWED_ORIGINS` - Restricts webservers origin while running production. Expects a JSON array of origins. Defaults to `["https://www.xivraidhub.com", "https://bot.xivraidhub.com"]`.
