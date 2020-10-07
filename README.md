@@ -27,7 +27,7 @@ Put these values in a [`.env`](https://www.npmjs.com/package/dotenv) file or in 
 ### Optional
 
 * `NODE_DEV` = `development`, for dev, otherwise assumes production
-* `BACKEND_BASE_URL` - Sent to discord as the origin when authentication. Defaults to `https://api.xivhub.com`.
+* `BACKEND_BASE_URL` - Sent to discord as the origin when authentication. Defaults to `https://api.xivraidhub.com`.
 * `BOT_BASE_URL` - override for base URL to use for the bots API. Defaults to `https://bot.xivraidhub.com`.
 * `FRONTEND_BASE_URL` - Users will be redirected here after authenticating with discord. Defaults to `https://www.xivraidhub.com`.
 * `ALLOWED_ORIGINS` - Restricts webservers origin while running production. Expects a JSON array of origins. Defaults to `["https://www.xivraidhub.com", "https://bot.xivraidhub.com"]`.

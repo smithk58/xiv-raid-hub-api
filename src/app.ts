@@ -34,7 +34,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use(session(app));
 
 // Use grant for oauth 2 handling
-const baseURL = process.env.BACKEND_BASE_URL || 'https://api.xivhub.com';
+const baseURL = process.env.BACKEND_BASE_URL || 'https://api.xivraidhub.com';
 const oAuthConfig = require('./config.json');
 oAuthConfig.defaults.origin = baseURL;
 oAuthConfig.discord.callback = '/api/session/login';
