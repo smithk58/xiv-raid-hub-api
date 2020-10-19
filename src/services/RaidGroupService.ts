@@ -30,7 +30,9 @@ export class RaidGroupService {
             .select(['group'])
             .getMany();
     }
-
+    public getRaidGroup(raidGroupId: number): Promise<RaidGroup> {
+        return getConnection().getRepository(RaidGroup).findOne({id: raidGroupId});
+    }
     /**
      * Returns a raid group and it's raid group characters.
      * @param userId - The ID of the user you're getting the raid group for. Used for permission checking.
@@ -266,7 +268,8 @@ export class RaidGroupService {
      * @param userId - The ID of the user to check permissions for.
      * @param raidGroupId - The ID of the raid group to check against.
      */
-    private async canViewRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
+    public async canViewRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
+        // TODO Investigate subquery instead of left join for the sharing stuff.
         return await getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
@@ -289,5 +292,4 @@ export class RaidGroupService {
             .where('id = :id AND "ownerId" = :ownerId', {id: raidGroupId, ownerId: userId})
             .getCount() > 0;
     }
-    // TODO clone raid group, should clone characters + schedule as well
 }

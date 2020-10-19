@@ -28,6 +28,7 @@ sessionRouter.get('/login', async (ctx: RContext) => {
             // Persist some basic stuff to the session
             ctx.session.user = new User(
                 user.id,
+                user.discordId,
                 user.username,
                 userService.getAvatarUrl(discordUser),
                 user.timezone

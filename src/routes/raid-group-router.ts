@@ -2,12 +2,12 @@
 import { Context, DefaultState, ParameterizedContext } from 'koa';
 import * as Router from '@koa/router';
 import { plainToClass } from 'class-transformer';
+import { Container } from 'typescript-ioc';
 
 import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
 import { RaidGroup } from '../repository/entity/RaidGroup';
 import { UserService } from '../services/UserService';
 import { RaidGroupService } from '../services/RaidGroupService';
-import { Container } from 'typescript-ioc';
 
 const raidGroupService: RaidGroupService = Container.get(RaidGroupService);
 const userService: UserService = Container.get(UserService);

@@ -1,5 +1,5 @@
 import { IsInt, Max, Min } from 'class-validator';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
 import { RaidGroup } from './RaidGroup';
@@ -29,7 +29,7 @@ export class WeeklyRaidTime {
 
     @IsInt()
     @Min(0)
-    @Max(60)
+    @Max(59)
     @Column()
     utcMinute: number;
 }

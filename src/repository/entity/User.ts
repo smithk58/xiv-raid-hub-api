@@ -1,9 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, BeforeInsert, BeforeUpdate } from 'typeorm';
 import { validateOrReject } from 'class-validator';
+import { Exclude } from 'class-transformer';
 
 import { RaidGroup } from './RaidGroup';
 import { UserCharacter } from './UserCharacter';
-import { Exclude } from 'class-transformer';
+import { Alarm } from './Alarm';
 
 @Entity({name: 'users'})
 export class User {
@@ -35,6 +36,10 @@ export class User {
     @Exclude()
     @OneToMany(type => RaidGroup, raidGroup => raidGroup.owner)
     raidGroups: RaidGroup[];
+
+    @Exclude()
+    @OneToMany(type => Alarm, alarm => alarm.owner)
+    raidGroupAlarms: Alarm[];
 
     @BeforeInsert()
     @BeforeUpdate()

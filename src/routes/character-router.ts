@@ -1,11 +1,11 @@
 import { Context, DefaultState, ParameterizedContext } from 'koa';
 import * as Router from '@koa/router';
 import { plainToClass } from 'class-transformer';
+import { Container } from 'typescript-ioc';
 
 import { Character } from '../repository/entity/Character';
 import { CharacterService } from '../services/CharacterService';
 import { UserService } from '../services/UserService';
-import { Container } from 'typescript-ioc';
 
 const characterService: CharacterService = Container.get(CharacterService);
 const userService: UserService = Container.get(UserService);

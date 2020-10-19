@@ -5,6 +5,7 @@ import { Exclude, Type } from 'class-transformer';
 import { RaidGroupCharacter } from './RaidGroupCharacter';
 import { User } from './User';
 import { WeeklyRaidTime } from './WeeklyRaidTime';
+import { Alarm } from './Alarm';
 
 @Entity({name: 'raid_groups'})
 export class RaidGroup {
@@ -45,4 +46,8 @@ export class RaidGroup {
     @Exclude()
     @OneToMany(type => WeeklyRaidTime, raidTime => raidTime.raidGroup, {cascade: ['remove']})
     weeklyRaidTimes: WeeklyRaidTime[];
+
+    @Exclude()
+    @OneToMany(type => Alarm, alarm => alarm.raidGroup)
+    alarms: Alarm[];
 }

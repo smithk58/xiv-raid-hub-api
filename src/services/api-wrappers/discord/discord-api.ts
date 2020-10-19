@@ -3,6 +3,8 @@ import { Singleton } from 'typescript-ioc';
 import fetch, { Response } from 'node-fetch';
 import { DiscordGuild } from './DiscordGuild';
 
+export type DiscordGuildWithChannels = DiscordGuild & {channels?: any[]};
+
 @Singleton
 export class DiscordApi {
     private static baseURL = 'https://discord.com/api/v6';
@@ -13,7 +15,7 @@ export class DiscordApi {
         });
         return this.handleResponse(response);
     }
-    public async getGuilds(token: string): Promise<DiscordGuild[]> {
+    public async getGuilds(token: string): Promise<DiscordGuildWithChannels[]> {
         const url = DiscordApi.baseURL + '/users/@me/guilds';
         const response = await fetch(url, {
             headers: {Authorization: 'Bearer ' + token}

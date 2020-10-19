@@ -3,19 +3,15 @@ import * as Router from '@koa/router';
 import { Container } from 'typescript-ioc';
 
 import { UserService } from '../services/UserService';
-import { DiscordApi } from '../services/api-wrappers/discord/discord-api';
-import { BotApi } from '../services/api-wrappers/bot-api';
-import { DiscordGuild } from '../services/api-wrappers/discord/DiscordGuild';
-
-const discordApi: DiscordApi = Container.get(DiscordApi);
-const userService: UserService = Container.get(UserService);
+import { AlarmService } from '../services/AlarmService';
 
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
 
 const routerOpts: Router.RouterOptions = {prefix: '/guilds'};
 const raidGroupRouter: Router = new Router<DefaultState, Context>(routerOpts);
 
-const botApi: BotApi = Container.get(BotApi);
+const alarmService: AlarmService = Container.get(AlarmService);
+const userService: UserService = Container.get(UserService);
 
 // Protect these routes
 raidGroupRouter.use(async (ctx: RContext, next) => {
@@ -24,21 +20,21 @@ raidGroupRouter.use(async (ctx: RContext, next) => {
 });
 raidGroupRouter.get('/', async (ctx: RContext) => {
     const oauthGrant = ctx.session.grant;
-    const usersGuilds = await discordApi.getGuilds(oauthGrant.response.access_token);
-    const botsGuildMap = await botApi.getGuilds().catch((err) => {
-        ctx.internalServerError('Unable to get the list of guilds available to the bot. ' + err);
-        ctx.res.end();
-    }) as Record<string, DiscordGuild>;
-    // Filter to users guilds that the bot is available on
-    const guilds = usersGuilds.filter((guild) => typeof(botsGuildMap[guild.id]) !== 'undefined');
+    const targetGuild = ctx.query.targetGuildId;
+    const guilds = await alarmService.getGuilds(oauthGrant.response.access_token, targetGuild);
     ctx.ok(guilds);
 });
 raidGroupRouter.get('/:id/channels', async (ctx: RContext) => {
+    const oauthGrant = ctx.session.grant;
     const guildId = ctx.params.id;
-    const channels = await botApi.getGuildChannels(guildId).catch((err) => {
+    const channels = await alarmService.getGuildChannels(guildId, oauthGrant.response.access_token).catch((err) => {
         ctx.internalServerError('Unable to get channels for the selected server.');
         ctx.res.end();
     });
-    ctx.ok(channels);
+    if (channels) {
+        ctx.ok(channels);
+    } else {
+        ctx.notFound('That guild either doesn\'t exist, or you don\'t have permission to Manage Guild permission to it.');
+    }
 });
 export default raidGroupRouter.routes();

@@ -29,7 +29,6 @@ export class UserService {
      */
     public async getUser(userId: number): Promise<User> {
         return getConnection().getRepository(User).findOne({id: userId});
-
     }
     public async getUserByDiscordId(discordId: string): Promise<User> {
         return getConnection().getRepository(User).findOne( {
@@ -42,7 +41,6 @@ export class UserService {
      * @param timezone - The users timezone.
      */
     public async createUser(discordUser: DiscordUser, timezone: string): Promise<User> {
-        const userRepository = getConnection().getRepository(User);
         const user = new User();
         user.discordId = discordUser.id;
         user.username = discordUser.username;
@@ -52,7 +50,7 @@ export class UserService {
         if (this.isValidTimezone(timezone)) {
             user.timezone = timezone;
         }
-        return userRepository.save(user);
+        return getConnection().getRepository(User).save(user);
     }
 
     /**

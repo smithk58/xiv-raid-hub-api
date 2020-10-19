@@ -11,6 +11,7 @@
     "start-dev": "ts-node-dev src/server.ts"
   },
   "dependencies": {
+    "@drdgvhbh/postgres-error-codes": "0.0.6",
     "@koa/cors": "^3.1.0",
     "@koa/router": "^8.0.8",
     "@types/cheerio": "^0.22.22",
