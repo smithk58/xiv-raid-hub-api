@@ -44,6 +44,6 @@ export class User {
     @BeforeInsert()
     @BeforeUpdate()
     private validate(): Promise<void> {
-        return validateOrReject(this);
+        return validateOrReject(this, {validationError: {target: false}});
     }
 }

@@ -1,5 +1,5 @@
-import { IsInt, Max, Min } from 'class-validator';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { IsIn, IsInt, Max, Min, validateOrReject } from 'class-validator';
+import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
 import { RaidGroup } from './RaidGroup';
@@ -30,6 +30,13 @@ export class WeeklyRaidTime {
     @IsInt()
     @Min(0)
     @Max(59)
+    @IsIn([0, 15, 30, 45], {message: 'Minutes must be 0, 15, 30, or 45.'})
     @Column()
     utcMinute: number;
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    private validate(): Promise<void> {
+        return validateOrReject(this, {validationError: {target: false}});
+    }
 }

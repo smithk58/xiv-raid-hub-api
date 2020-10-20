@@ -35,6 +35,6 @@ export class RaidGroupCharacter {
     @BeforeInsert()
     @BeforeUpdate()
     private validate(): Promise<void> {
-        return validateOrReject(this);
+        return validateOrReject(this, {validationError: {target: false}});
     }
 }
