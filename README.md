@@ -1,6 +1,6 @@
 ## Development server
 
-Run `nodemon` or `npm run start-dev` to start the dev server.
+Run `npm run start-dev` to start the dev server.
 
 ## Build
 
