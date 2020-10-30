@@ -1,4 +1,4 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { IsEnum, IsIn, IsInt, Max, Min, validateOrReject } from 'class-validator';
 import { Exclude } from 'class-transformer';
 
@@ -23,7 +23,10 @@ export class Alarm {
     })
     type: AlarmType;
 
-    @Column({length: 129}) // 2x snowflakes + _ separator
+    @Column({length: 64}) // snowflake
+    targetGuildId: string;
+
+    @Column({length: 64}) // snowflake
     targetId: string;
 
     @Exclude()
@@ -32,7 +35,7 @@ export class Alarm {
 
     @IsInt()
     @Min(0)
-    @Max(23)
+    @Max(24)
     @Column()
     offsetHour: number;
 
@@ -44,6 +47,7 @@ export class Alarm {
     @Column()
     offsetMinute: number;
 
+    @Index()
     @Column()
     isEnabled: boolean;
 

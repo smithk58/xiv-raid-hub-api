@@ -161,11 +161,11 @@ export class RaidGroupService {
         }
         const usersCharacters = await getConnection()
             .getRepository(RaidGroupCharacter)
-            .createQueryBuilder('raidcharacter')
-            .innerJoin('user_characters', 'usercharacters', 'usercharacters."characterId" = raidcharacter."characterId"')
-            .where('usercharacters."userId" = :userId AND "isOwner" = true', {userId})
-            .andWhere('raidcharacter."raidGroupId" = :raidGroupId', {raidGroupId})
-            .select('raidcharacter')
+            .createQueryBuilder('rc')
+            .innerJoin('user_characters', 'uc', 'uc."characterId" = rc."characterId"')
+            .where('uc."userId" = :userId AND "isOwner" = true', {userId})
+            .andWhere('rc."raidGroupId" = :raidGroupId', {raidGroupId})
+            .select('rc')
             .getMany();
         return getConnection().getRepository(RaidGroupCharacter).remove(usersCharacters);
     }

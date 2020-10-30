@@ -8,6 +8,8 @@ import { DiscordApi, DiscordGuildWithChannels } from './api-wrappers/discord/dis
 import { UserService } from './UserService';
 import { DiscordGuild } from './api-wrappers/discord/DiscordGuild';
 import { BotApi } from './api-wrappers/bot-api';
+import { DaysOfWeek } from '../utils/DaysUtils';
+import { ValidationError} from '../utils/errors/ValidationError';
 
 @Singleton
 export class AlarmService {
@@ -46,22 +48,28 @@ export class AlarmService {
         return this.saveAlarm(alarm, userId, userDiscordId, token);
     }
     private async saveAlarm(alarm: Alarm, userId: number, userDiscordId: string, token: string) {
+        const isChannelAlarm = alarm.type === AlarmType.CHANNEL;
+        // Check if the guild exists in their available guilds
+        // Only apply targetGuildId if we need the channels resolved
+        const guilds = await this.getGuilds(token, isChannelAlarm ? alarm.targetGuildId : undefined);
+        const targetGuild = guilds.find(guild => guild.id = alarm.targetGuildId);
+        if (!targetGuild) {
+            throw new ValidationError('Invalid discord server. You require Manage Guild permission on the server and both you and the' +
+                ' XIV Raid Hub bot need to be in the server.', 'targetGuildId'
+            );
+        }
         // Validate they have permission for the target server/channel, or assign the user as the target
-        if (alarm.type === AlarmType.CHANNEL) {
-            const targetSplit = alarm.targetId.split('_');
-            const targetGuildId = targetSplit.length > 0 ? targetSplit[0] : '';
-            const targetChannelId = targetSplit.length > 1 ? targetSplit[1] : '';
-            // Check if the guild exists in their available guilds, if so, confirm the channel exists as well
-            const guilds = await this.getGuilds(token, targetGuildId);
-            const targetGuild = guilds.find(guild => guild.id = targetGuildId);
-            const targetChannel = targetGuild ? targetGuild.channels.find(channel => channel.id === targetChannelId) : '';
-            if (!targetGuild || !targetChannel) {
-                const err = !targetGuild ? 'The target server doesn\'t appear to exist, or you don\'t have Manage Guild permission on it' :
-                    'The target channel doesn\'t appear to exist on that server, perhaps someone deleted it?';
-                throw new Error('Invalid alarm target. ' + err);
+        if (isChannelAlarm) {
+            // Confirm the channel exists on the target server
+            const targetChannel = targetGuild ? targetGuild.channels.find(channel => channel.id === alarm.targetId) : undefined;
+            if (!targetChannel) {
+                throw new ValidationError('Invalid discord channel. Perhaps the the channel was deleted before you saved it, or the bot' +
+                    'no longer can see the channel?', 'targetId'
+                );
             }
             alarm.targetName = targetGuild.name + ' / ' + targetChannel.name;
         } else {
+            alarm.targetName = targetGuild.name + ' / ' + 'DM to you';
             alarm.targetId = userDiscordId;
         }
         alarm.ownerId = userId;
@@ -111,6 +119,27 @@ export class AlarmService {
             }
         }
         return this.botApi.getGuildChannels(guildId);
+    }
+    public async getScheduledAlarms(utcHour: number, utcMinute: number) {
+        // Get the bits for the current and next day, alarms we care about can be on either of them
+        const jsDay = new Date().getUTCDay();
+        const curDayBit = DaysOfWeek.get(jsDay).bit;
+        const nextDayBit = DaysOfWeek.get(jsDay === 6 ? 0 : jsDay + 1).bit;
+        return await getConnection()
+            .getRepository(Alarm)
+            .createQueryBuilder('a')
+            .innerJoin('weekly_raid_times', 'wrt', 'a."raidGroupId" = wrt."raidGroupId"')
+            .innerJoin('a.raidGroup', 'group')
+            .where('a."isEnabled" = true')
+            .andWhere('wrt."utcMinute" = :utcMinute', {utcMinute})
+            .andWhere(
+                '(wrt."utcHour" - a."offsetHour" = :utcHour AND wrt."weekMask" & :curDayBit > 0)' +
+                'OR' +
+                '(wrt."utcHour" + 24 - a."offsetHour" = :utcHour AND wrt."weekMask" & :nextDayBit > 0)',
+                {utcHour, curDayBit, nextDayBit}
+            )
+            .select(['a', 'group'])
+            .getMany();
     }
     private async canEditAlarm(userId: number, alarmId: number): Promise<boolean> {
         return await getConnection()

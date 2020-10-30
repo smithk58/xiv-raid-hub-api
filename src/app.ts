@@ -10,8 +10,8 @@ const respond = require('koa-respond');
 const grant = require('grant').koa();
 import apiRouter from './routes';
 import { createConnection } from 'typeorm';
-import { checkOriginAgainstWhitelist } from './utility-middleware/origin-whitelist';
-import { handleError } from './utility-middleware/error-handler';
+import { checkOriginAgainstWhitelist } from './utils/middleware/origin-whitelist';
+import { handleError } from './utils/middleware/error-handler';
 
 require('dotenv').config();
 

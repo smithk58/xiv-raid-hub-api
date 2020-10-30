@@ -7,6 +7,7 @@ import DiscordUserRouter from './discord-user-router';
 import RaidTimesRouter from './raid-times-router';
 import GuildsRouter from './guilds-router';
 import AlarmRouter from './alarm-router';
+import BotRouter from './bot-router';
 
 const apiRouter = new Router({prefix: '/api'});
 apiRouter.use(SessionRouter);
@@ -16,4 +17,5 @@ apiRouter.use(RaidTimesRouter);
 apiRouter.use(DiscordUserRouter);
 apiRouter.use(GuildsRouter);
 apiRouter.use(AlarmRouter);
+apiRouter.use(BotRouter);
 export default apiRouter;

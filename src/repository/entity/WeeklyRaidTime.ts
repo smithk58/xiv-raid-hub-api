@@ -1,9 +1,10 @@
 import { IsIn, IsInt, Max, Min, validateOrReject } from 'class-validator';
-import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
 import { RaidGroup } from './RaidGroup';
 
+@Index(['raidGroupId', 'utcHour'])
 @Entity({name: 'weekly_raid_times'})
 export class WeeklyRaidTime {
     @PrimaryGeneratedColumn()
