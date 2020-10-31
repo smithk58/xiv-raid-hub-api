@@ -8,7 +8,7 @@ import { DiscordApi, DiscordGuildWithChannels } from './api-wrappers/discord/dis
 import { UserService } from './UserService';
 import { DiscordGuild } from './api-wrappers/discord/DiscordGuild';
 import { BotApi } from './api-wrappers/bot-api';
-import { DaysOfWeek } from '../utils/DaysUtils';
+import { DaysOfWeekByJsDay } from '../utils/DaysUtils';
 import { ValidationError} from '../utils/errors/ValidationError';
 
 @Singleton
@@ -123,8 +123,8 @@ export class AlarmService {
     public async getScheduledAlarms(utcHour: number, utcMinute: number) {
         // Get the bits for the current and next day, alarms we care about can be on either of them
         const jsDay = new Date().getUTCDay();
-        const curDayBit = DaysOfWeek.get(jsDay).bit;
-        const nextDayBit = DaysOfWeek.get(jsDay === 6 ? 0 : jsDay + 1).bit;
+        const curDayBit = DaysOfWeekByJsDay.get(jsDay).bit;
+        const nextDayBit = DaysOfWeekByJsDay.get(jsDay === 6 ? 0 : jsDay + 1).bit;
         return await getConnection()
             .getRepository(Alarm)
             .createQueryBuilder('a')

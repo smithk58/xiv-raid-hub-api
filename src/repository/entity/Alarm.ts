@@ -10,7 +10,7 @@ export enum AlarmType {
     CHANNEL = 'channel'
 }
 
-@Unique('unique_alarm', ['raidGroupId', 'targetId', 'type', 'offsetHour', 'offsetMinute'])
+@Unique('unique_alarm', ['raidGroupId', 'targetId', 'type', 'offsetHour'])
 @Entity({name: 'raid_group_alarms'})
 export class Alarm {
     @PrimaryGeneratedColumn()
@@ -38,14 +38,6 @@ export class Alarm {
     @Max(24)
     @Column()
     offsetHour: number;
-
-    @IsInt()
-    @Min(0)
-    @Max(59)
-    @IsIn([0, 15, 30, 45], {message: 'Minutes must be 0, 15, 30, or 45.'})
-
-    @Column()
-    offsetMinute: number;
 
     @Index()
     @Column()
