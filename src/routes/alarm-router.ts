@@ -36,6 +36,7 @@ alarmRouter.post('/', async (ctx: RContext) => {
 });
 alarmRouter.put('/:id', async (ctx: RContext) => {
     const alarm: Alarm = plainToClass(Alarm, ctx.request.body);
+    alarm.id = parseInt(ctx.params.id, 10);
     const token = ctx.session.grant.response.access_token;
     const res = await alarmService.updateAlarm(alarm, ctx.session.user.id, ctx.session.user.discordId, token);
     if (res) {

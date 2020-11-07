@@ -1,13 +1,22 @@
-import { getConnection } from 'typeorm';
-import { Singleton } from 'typescript-ioc';
+import { DeleteResult, EntityManager, getConnection, getManager } from 'typeorm';
+import { Inject, Singleton } from 'typescript-ioc';
 import { DiscordUser } from './api-wrappers/discord/DiscordUser';
 import * as moment from 'moment-timezone';
 
 import { User } from '../repository/entity/User';
 import { RContext } from '../routes/raid-group-router';
+import { UserSetting } from '../repository/entity/UserSetting';
+import * as Properties from '../models/user-settings/properties';
+import { IProperty, PropertyValue } from '../models/user-settings/IProperty';
+import { PropertyService } from './PropertyService';
 
 @Singleton
 export class UserService {
+    @Inject private propertyService: PropertyService;
+    properties: Record<string, IProperty<PropertyValue>>;
+    constructor() {
+        this.properties = this.propertyService.loadProperties(Properties);
+    }
     /**
      * Logs in the specified discord user. Creates or updates a user with the discord users information.
      * @param discordUser - The discord user to login as.
@@ -70,7 +79,46 @@ export class UserService {
         user.lastLogin = new Date();
         return userRepository.save(user);
     }
-
+    public async getSettings(userId: number) {
+        const settings = await getConnection()
+            .getRepository(UserSetting)
+            .createQueryBuilder('us')
+            .where('us."userId" = :userId', {userId})
+            .getMany();
+        const settingsMap = settings.reduce((map: Record<string, string>, setting: UserSetting) => {
+            map[setting.key] = setting.value;
+            return map;
+        }, {});
+        return this.propertyService.resolvePropertyValueMap(this.properties, settingsMap);
+    }
+    public async updateSettings(userId: number, settings: Record<string, PropertyValue>) {
+        this.propertyService.validatePropertyValues(this.properties, settings);
+        Object.keys(settings).forEach((key) => {
+            const property = this.properties[key];
+            const value = settings[key];
+            // Delete properties that are being set to default, insert/update others
+            const keysToDelete: string[] = [];
+            const newSettings: UserSetting[] =  [];
+            if (property.isDefault(value)) {
+                keysToDelete.push(key);
+            } else {
+                newSettings.push(new UserSetting(userId, key, property.valueToString(value)));
+            }
+            return getManager().transaction(async (entityManager: EntityManager) => {
+                if (keysToDelete.length > 0) {
+                    await this.deleteSettings(entityManager, userId, keysToDelete);
+                }
+                return await entityManager.getRepository(UserSetting).save(newSettings);
+            });
+        });
+    }
+    private async deleteSettings(entityManager: EntityManager, userId: number, keys: string[]): Promise<DeleteResult> {
+        return entityManager.createQueryBuilder()
+            .delete()
+            .from(UserSetting)
+            .where('"userId" = :userId AND "key" IN (:...keys)', {userId, keys})
+            .execute();
+    }
     /**
      * Attempts to build a more user friendly timezone out of the browsers timezone.
      * @param timezone - The timezone to get a pretty timezone for.
@@ -98,7 +146,7 @@ export class UserService {
         }
         return avatarURL + '.png?size=128';
     }
-    public isValidTimezone(timezone: string): boolean {
+    private isValidTimezone(timezone: string): boolean {
         return moment.tz.zone(timezone) != null;
     }
     /**

@@ -1,5 +1,4 @@
 import * as Koa from 'koa';
-import * as HttpStatus from 'http-status-codes';
 import * as Helmet from 'koa-helmet';
 import * as Logger from 'koa-logger';
 import * as Cors from '@koa/cors';
@@ -12,7 +11,6 @@ import apiRouter from './routes';
 import { createConnection } from 'typeorm';
 import { checkOriginAgainstWhitelist } from './utils/middleware/origin-whitelist';
 import { handleError } from './utils/middleware/error-handler';
-
 require('dotenv').config();
 
 const app: Koa = new Koa();
@@ -42,7 +40,7 @@ oAuthConfig.discord.secret = process.env.DISCORD_CLIENT_SECRET;
 app.use(grant(oAuthConfig));
 
 // Let's us parse JSON requests
-app.use(bodyParser({ // TODO maybe not needed w/ transformAndValidate being used
+app.use(bodyParser({
     enableTypes: ['json'],
     onerror: (err, ctx) => {
         ctx.throw('body parse error', 422);
