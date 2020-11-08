@@ -6,6 +6,9 @@ import { RaidGroup } from '../repository/entity/RaidGroup';
 import { RaidGroupCharacter } from '../repository/entity/RaidGroupCharacter';
 import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
 import { UserService } from './UserService';
+import { UserCharacter } from '../repository/entity/UserCharacter';
+import { AllowAddToRaidGroup } from '../models/user-settings/properties';
+import { ValidationError } from '../utils/errors/ValidationError';
 
 @Singleton
 export class RaidGroupService {
@@ -69,6 +72,9 @@ export class RaidGroupService {
         // TODO Validate characters in raid group are unique
         // Have to call validateOrReject ourselves, since changes in length of characters[] don't trigger @BeforeInsert() or @BeforeUpdate()
         await validateOrReject(raidGroup, {validationError: {target: false}});
+        // Confirm the characters all allow people to add them to raid groups
+        const newCharacterIds = raidGroup.characters.map((rgChar) => rgChar.character ? rgChar.character.id : rgChar.characterId);
+        await this.canAddCharacters(userId, newCharacterIds, raidGroup.characters);
         // Assign current user as owner of the new raid group
         raidGroup.owner = await this.userService.getUser(userId);
         raidGroup.isOwner = true;
@@ -103,9 +109,22 @@ export class RaidGroupService {
         }
         // Have to call validateOrReject ourselves, since changes in length of characters[] don't trigger @BeforeInsert() or @BeforeUpdate()
         await validateOrReject(raidGroup, {validationError: {target: false}});
+        const existingRaidGroup = await this.getRaidGroupWithCharacters(userId, raidGroup.id);
+        // Check if they've added a new character, if so we have to confirm they haven't disallowed being added to raid groups
+        const newCharacterIds = existingRaidGroup.getNewCharacterIds(raidGroup.characters);
+        if (newCharacterIds.length > 0) {
+            await this.canAddCharacters(userId, newCharacterIds, raidGroup.characters);
+        }
+        // Check if they've made any changes to the raid group characters
+        const charactersModified = !existingRaidGroup.isEqualCharacters(raidGroup.characters);
         return getManager().transaction(async (entityManager: EntityManager) => {
-            // Delete existing raid group characters, since type ORM can't figure out to do so and runs into a unique constraint error
-            await this.deleteRaidGroupCharacters(entityManager, raidGroup.id);
+            // Delete existing raid group characters if they were changed, since type ORM can't figure out to do so and runs into a
+            // unique constraint error, otherwise remove them from the group before saving so it doesn't attempt to save them
+            if (charactersModified) {
+                await this.deleteRaidGroupCharacters(entityManager, raidGroup.id);
+            } else {
+                delete raidGroup.characters;
+            }
             await entityManager.save(RaidGroup, raidGroup);
             // Have to reselect the the raid group to get owner information
             const updatedRaidGroup = await entityManager.getRepository(RaidGroup)
@@ -291,5 +310,28 @@ export class RaidGroupService {
             .createQueryBuilder()
             .where('id = :id AND "ownerId" = :ownerId', {id: raidGroupId, ownerId: userId})
             .getCount() > 0;
+    }
+    private async canAddCharacters(userId: number, characterIds: number[], sourceCharacters: RaidGroupCharacter[]) {
+        const blockedCharacters = await getConnection()
+            .getRepository(UserCharacter)
+            .createQueryBuilder('uc')
+            .innerJoin('user_settings', 'us', 'uc."userId" = us."userId"')
+            .where('uc."characterId" IN (:...characterIds)', {characterIds})
+            .andWhere('uc."isOwner" = true')
+            .andWhere('us.key =\'' + AllowAddToRaidGroup.key + '\'')
+            .andWhere('us.value = \'false\'')
+            .andWhere('uc.userId <> :userId', {userId})
+            .getMany();
+        if (blockedCharacters.length > 0) {
+            const names = [];
+            for (const blockedCharacter of blockedCharacters) {
+                const targetCharacter = sourceCharacters.find(c => c.character.id === blockedCharacter.characterId);
+                names.push(targetCharacter.character.name);
+            }
+            throw new ValidationError(
+                // tslint:disable-next-line:max-line-length
+                'The owners of the following characters have disabled allowing other players to add their characters to raid groups: ' + names.join(', ')
+            );
+        }
     }
 }

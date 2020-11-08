@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { User } from './User';
 
-@Entity({name: 'user_setting'})
+@Entity({name: 'user_settings'})
 export class UserSetting {
     constructor(userId: number, key: string, value: string) {
         this.userId = userId;

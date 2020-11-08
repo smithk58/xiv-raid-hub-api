@@ -1,11 +1,12 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Exclude, Type } from 'class-transformer';
+import { IsIn, IsOptional, validateOrReject } from 'class-validator';
 
 import { Character } from './Character';
 import { User } from './User';
-import { IsIn, IsOptional, validateOrReject } from 'class-validator';
 import { XIVClasses } from '../../constants';
 
+@Index(['userId'])
 @Entity({name: 'user_characters'})
 export class UserCharacter {
     @PrimaryColumn({name: 'characterId'})
