@@ -1,16 +1,28 @@
 import { Singleton } from 'typescript-ioc';
 import fetch, { Response } from 'node-fetch';
 import { URL } from 'url';
+import { IdNamePair } from './IdNamePair';
+import { SimpleGuild } from './SimpleGuild';
 
 @Singleton
 export class BotApi {
-    public async getGuilds() {
+    public async getGuilds(): Promise<Record<string, SimpleGuild>> {
         const url = this.createUrl('/guilds');
         const response = await fetch(url);
         return this.handleResponse(response);
     }
-    public async getGuildChannels(guildId: string): Promise<any[]> {
+    public async getGuildChannels(guildId: string): Promise<IdNamePair[]> {
         const url = this.createUrl('/guilds/' + guildId + '/channels');
+        const response = await fetch(url);
+        return this.handleResponse(response);
+    }
+    public async getGuildRoles(guildId: string): Promise<IdNamePair[]> {
+        const url = this.createUrl('/guilds/' + guildId + '/roles');
+        const response = await fetch(url);
+        return this.handleResponse(response);
+    }
+    public async getGuildDetail(guildId: string): Promise<SimpleGuild> {
+        const url = this.createUrl('/guilds/' + guildId);
         const response = await fetch(url);
         return this.handleResponse(response);
     }

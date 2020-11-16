@@ -34,7 +34,20 @@ raidGroupRouter.get('/:id/channels', async (ctx: RContext) => {
     if (channels) {
         ctx.ok(channels);
     } else {
-        ctx.notFound('That guild either doesn\'t exist, or you don\'t have permission to Manage Guild permission to it.');
+        ctx.notFound('That server either doesn\'t exist, or you don\'t have Manage Guild permission to it.');
+    }
+});
+raidGroupRouter.get('/:id/roles', async (ctx: RContext) => {
+    const oauthGrant = ctx.session.grant;
+    const guildId = ctx.params.id;
+    const channels = await alarmService.getGuildRoles(guildId, oauthGrant.response.access_token).catch((err) => {
+        ctx.internalServerError('Unable to get roles for the selected server.');
+        ctx.res.end();
+    });
+    if (channels) {
+        ctx.ok(channels);
+    } else {
+        ctx.notFound('That server doesn\'t exist.');
     }
 });
 export default raidGroupRouter.routes();

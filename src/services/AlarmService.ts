@@ -7,9 +7,10 @@ import { RaidGroupService } from './RaidGroupService';
 import { DiscordApi, DiscordGuildWithChannels } from './api-wrappers/discord/discord-api';
 import { UserService } from './UserService';
 import { DiscordGuild } from './api-wrappers/discord/DiscordGuild';
-import { BotApi } from './api-wrappers/bot-api';
+import { BotApi } from './api-wrappers/bot/bot-api';
 import { DaysOfWeekByJsDay } from '../utils/DaysUtils';
 import { ValidationError} from '../utils/errors/ValidationError';
+import { SimpleGuild } from './api-wrappers/bot/SimpleGuild';
 
 @Singleton
 export class AlarmService {
@@ -49,10 +50,9 @@ export class AlarmService {
     }
     private async saveAlarm(alarm: Alarm, userId: number, userDiscordId: string, token: string) {
         const isChannelAlarm = alarm.type === AlarmType.CHANNEL;
-        // Check if the guild exists in their available guilds
-        // Only apply targetGuildId if we need the channels resolved
-        const guilds = await this.getGuilds(token, isChannelAlarm ? alarm.targetGuildId : undefined);
-        const targetGuild = guilds.find(guild => guild.id = alarm.targetGuildId);
+        const hasRole = !!alarm.targetRoleId;
+        // Confirm the guild is allowed and the selected channel/role are valid
+        const targetGuild = await this.getGuildDetail(token, alarm.targetGuildId);
         if (!targetGuild) {
             throw new ValidationError('Invalid discord server. You require Manage Guild permission on the server and both you and the' +
                 ' XIV Raid Hub bot need to be in the server.', 'targetGuildId'
@@ -61,16 +61,29 @@ export class AlarmService {
         // Validate they have permission for the target server/channel, or assign the user as the target
         if (isChannelAlarm) {
             // Confirm the channel exists on the target server
-            const targetChannel = targetGuild ? targetGuild.channels.find(channel => channel.id === alarm.targetId) : undefined;
+            const targetChannel = targetGuild.channels.find(channel => channel.id === alarm.targetId);
             if (!targetChannel) {
-                throw new ValidationError('Invalid discord channel. Perhaps the the channel was deleted before you saved it, or the bot' +
-                    'no longer can see the channel?', 'targetId'
+                throw new ValidationError('Invalid discord channel. Perhaps the the channel was deleted before you saved the alarm, or the bot' +
+                    'can\'t see the channel?', 'targetId'
                 );
             }
             alarm.targetName = targetGuild.name + ' / ' + targetChannel.name;
+            // Confirm role exists on target server, set its name if found, otherwise explicitly clear the fields
+            if (hasRole) {
+                const targetRole = targetGuild.roles.find(role => role.id === alarm.targetRoleId);
+                if (!targetRole) {
+                    throw new ValidationError('Invalid discord role. Perhaps the the role was deleted before you saved the alarm.', 'targetId');
+                }
+                alarm.targetRoleName = targetRole.name;
+            }
         } else {
             alarm.targetName = targetGuild.name + ' / ' + 'DM to you';
             alarm.targetId = userDiscordId;
+        }
+        // Clear out role fields if no role
+        if (!hasRole) {
+            alarm.targetRoleId = null;
+            alarm.targetRoleName = null;
         }
         alarm.ownerId = userId;
         const savedAlarm = await getConnection().getRepository(Alarm).save(alarm).catch(this.duplicateAlarmHandler);
@@ -88,11 +101,36 @@ export class AlarmService {
             .where('id = :id', {id: alarmId})
             .execute();
     }
+
+    /**
+     * Returns the specified guild with both channels and roles resolved, if both the user and bot have access to the guild.
+     * @param token - The discord token for the current user, for retrieving the guilds they're in.
+     * @param guildId - The  guild ID to get.
+     */
+    public async getGuildDetail(token: string, guildId: string) {
+        const usersGuilds = await this.discordApi.getGuilds(token);
+        // TODO Probably more efficient to hit /guilds/<id>/members/<id>, but am lazy atm
+        const guild = usersGuilds.find((g) => g.id === guildId);
+        if (!guild || !this.hasManageGuild(guild)) {
+            throw new Error('That server either doesn\'t exist, or you don\'t have Manage Guild permission to it.');
+        }
+        const botGuild = await this.botApi.getGuildDetail(guild.id);
+        if (!botGuild) {
+            throw new Error('The bot couldn\'t find that server. Either it was removed from the server or discord is having issues.');
+        }
+        return botGuild;
+    }
+    /**
+     * Returns a list of guilds that both the user and the bot is in. Optionally resolves the channels for a particular guild if a target
+     * guild ID is provided as well.
+     * @param token - The discord token for the current user, for retrieving the guilds they're in.
+     * @param targetGuildId - The target guild ID to get channels for.
+     */
     public async getGuilds(token: string, targetGuildId?: string) {
         const usersGuilds = await this.discordApi.getGuilds(token);
         const botsGuildMap = await this.botApi.getGuilds().catch(() => {
             throw new Error('Unable to get the list of servers available to the bot.');
-        }) as Record<string, DiscordGuildWithChannels>;
+        });
         // Filter to users guilds that the bot is available on and the person has MANAGE_CHANNELS permission for
         let targetGuild: DiscordGuildWithChannels;
         const guilds = usersGuilds.filter((guild) => {
@@ -113,12 +151,24 @@ export class AlarmService {
         if (token) {
             const usersGuilds = await this.discordApi.getGuilds(token);
             const targetGuild = usersGuilds.find(guild => guild.id === guildId);
-            // Ensure it's a guild they're in and have manage permission to before turning channels
+            // Ensure it's a guild they're in and have manage permission to before returning channels
             if (!targetGuild || !this.hasManageGuild(targetGuild)) {
                 return Promise.resolve(null);
             }
         }
         return this.botApi.getGuildChannels(guildId);
+    }
+    public async getGuildRoles(guildId: string, token?: string) {
+        // Validate user is allowed to see guild if we're provided a token
+        if (token) {
+            const usersGuilds = await this.discordApi.getGuilds(token);
+            const targetGuild = usersGuilds.find(guild => guild.id === guildId);
+            // Ensure it's a guild they're in before returning roles
+            if (!targetGuild) {
+                return Promise.resolve(null);
+            }
+        }
+        return this.botApi.getGuildRoles(guildId);
     }
     public async getScheduledAlarms(utcHour: number, utcMinute: number) {
         // Get the bits for the current and next day, alarms we care about can be on either of them

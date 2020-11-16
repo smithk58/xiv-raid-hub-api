@@ -33,6 +33,12 @@ export class Alarm {
     @Column({length: 100, nullable: true})
     targetName: string;
 
+    @Column({length: 64, nullable: true})
+    targetRoleId: string;
+
+    @Column({length: 100, nullable: true})
+    targetRoleName: string;
+
     @IsInt()
     @Min(0)
     @Max(24)

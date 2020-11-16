@@ -1,9 +1,11 @@
-import { DiscordUser } from './DiscordUser';
 import { Singleton } from 'typescript-ioc';
 import fetch, { Response } from 'node-fetch';
-import { DiscordGuild } from './DiscordGuild';
 
-export type DiscordGuildWithChannels = DiscordGuild & {channels?: any[]};
+import { DiscordUser } from './DiscordUser';
+import { DiscordGuild } from './DiscordGuild';
+import { IdNamePair } from '../bot/IdNamePair';
+
+export type DiscordGuildWithChannels = DiscordGuild & {channels?: IdNamePair[]};
 
 @Singleton
 export class DiscordApi {

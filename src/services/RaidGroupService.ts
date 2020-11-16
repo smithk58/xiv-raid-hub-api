@@ -102,6 +102,7 @@ export class RaidGroupService {
      */
     public async updateRaidGroup(userId: number, raidGroup: RaidGroup) {
         // TODO Validate characters in raid group are unique
+        // TODO Remove alarms from people that are removed from a raid group, check if can auto cascade
         // Ensure the raid group exists and they can edit it before continuing
         const canEdit = await this.canEditRaidGroup(userId, raidGroup.id);
         if (!canEdit) {
@@ -146,6 +147,7 @@ export class RaidGroupService {
      * @param raidGroupId - The ID of the raid group to delete.
      */
     public async deleteRaidGroup(userId: number, raidGroupId: number): Promise<DeleteResult> {
+        // TODO Fails if alarms exist, need cascade delete or need to delete them manually
         // Ensure the raid group exists and they can edit it before continuing
         const canEdit = await this.canEditRaidGroup(userId, raidGroupId);
         if (!canEdit) {
@@ -173,6 +175,7 @@ export class RaidGroupService {
      */
     public async deleteRaidGroupCharactersForUser(userId: number, raidGroupId: number): Promise<RaidGroupCharacter[]> {
         // TODO Flag/notification on raid group noting that it has too few characters now
+        // TODO Delete alarms this user has made for the raid group, or clear
         // Ensure the raid group exists and they at least have view access
         const canView = await this.canViewRaidGroup(userId, raidGroupId);
         if (!canView) {
