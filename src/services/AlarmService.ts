@@ -1,4 +1,4 @@
-import { DeleteResult, getConnection } from 'typeorm';
+import { DeleteResult, EntityManager, getConnection } from 'typeorm';
 import { Inject, Singleton } from 'typescript-ioc';
 import { PG_UNIQUE_VIOLATION } from '@drdgvhbh/postgres-error-codes';
 
@@ -11,6 +11,7 @@ import { BotApi } from './api-wrappers/bot/bot-api';
 import { DaysOfWeekByJsDay } from '../utils/DaysUtils';
 import { ValidationError} from '../utils/errors/ValidationError';
 import { SimpleGuild } from './api-wrappers/bot/SimpleGuild';
+import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
 
 @Singleton
 export class AlarmService {
@@ -102,6 +103,13 @@ export class AlarmService {
             .execute();
     }
 
+    public async deleteRaidGroupAlarms(entityManager: EntityManager, raidGroupId: number) {
+        return entityManager.createQueryBuilder()
+            .delete()
+            .from(Alarm)
+            .where('"raidGroupId" = :id', {id: raidGroupId})
+            .execute();
+    }
     /**
      * Returns the specified guild with both channels and roles resolved, if both the user and bot have access to the guild.
      * @param token - The discord token for the current user, for retrieving the guilds they're in.

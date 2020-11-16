@@ -9,10 +9,12 @@ import { UserService } from './UserService';
 import { UserCharacter } from '../repository/entity/UserCharacter';
 import { AllowAddToRaidGroup } from '../models/user-settings/properties';
 import { ValidationError } from '../utils/errors/ValidationError';
+import { AlarmService } from './AlarmService';
 
 @Singleton
 export class RaidGroupService {
     @Inject private userService: UserService;
+    @Inject private alarmService: AlarmService;
     /**
      * Returns all raid groups a particular user is allowed to see, but not necessarily edit. A user is allowed to see raid groups they
      * created, and raid groups that others created that have 'share' enabled, and have a character in them that is confirmed to be owned
@@ -158,6 +160,7 @@ export class RaidGroupService {
             // Have to delete the related character groups and schedule, because typeorms cascade is can't figure out composite keys?
             await this.deleteRaidGroupCharacters(entityManager, raidGroupId);
             await this.deleteWeeklyRaidTimes(entityManager, raidGroupId);
+            await this.alarmService.deleteRaidGroupAlarms(entityManager, raidGroupId);
             // Finally delete the actual raid group
             return entityManager
                 .createQueryBuilder()
