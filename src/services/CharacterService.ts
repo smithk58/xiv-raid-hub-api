@@ -111,12 +111,44 @@ export class CharacterService {
     }
 
     /**
+     * Returns the name/server of the target character profile.
+     * @param characterId - The ID of the character to get the name/server of
+     */
+    public async getLodestoneCharacterInfo(characterId: number): Promise<{name?: string, server?: string}> {
+        const nameSelector = '.frame__chara__name';
+        const serverSelector = '.frame__chara__world';
+        const content = await this.getStringsFromLodestone(characterId, [nameSelector, serverSelector]);
+        let result: {name?: string, server?: string};
+        if (content) {
+            result = {
+                name: content[nameSelector],
+                server: content[serverSelector]
+            };
+        }
+        return Promise.resolve(result);
+    }
+    /**
      * Checks the lodestone profile for the specified character ID, for the provided targetString. Returns whether or not the string was
      * found.
      * @param characterId - The ID of the character whose profile you want to check.
      * @param targetString - The string to search for in the profile.
      */
     private async checkLodestoneProfileForString(characterId: number, targetString: string): Promise<boolean> {
+        const characterProfileSelector = '.character__selfintroduction';
+        const content = await this.getStringsFromLodestone(characterId, [characterProfileSelector]);
+        let wasFound = false;
+        if (content && content[characterProfileSelector]) {
+            wasFound = content[characterProfileSelector].indexOf(targetString) > -1;
+        }
+        return Promise.resolve(wasFound);
+    }
+
+    /**
+     * Gets the target elements content from the target characters lodestone profile.
+     * @param characterId - The character ID to check the lodestone for.
+     * @param domSelectors - An array of dom selectors to search the profile DOM for. (e.g. .className)
+     */
+    private async getStringsFromLodestone(characterId: number, domSelectors: string[]): Promise<Record<string, string>> {
         return new Promise((resolve, reject) => {
             const req = https.get('https://na.finalfantasyxiv.com/lodestone/character/' + characterId, (response: IncomingMessage) => {
                 // Build the response
@@ -126,11 +158,17 @@ export class CharacterService {
                 });
                 // The whole response has been received.
                 response.on('end', () => {
-                    // Load the loadstone page into cheerio so we can query it, then search the character intro for the string
+                    // Load the loadstone page into cheerio so we can query it
                     const $ = cheerio.load(data);
-                    const intro = $('.character__selfintroduction');
-                    const containsString = intro.length > 0 ? intro.text().indexOf(targetString) > -1 : false;
-                    resolve(containsString);
+                    // Select each element we wanted and return their contents
+                    const result: Record<string, string> = {};
+                    for (const selector of domSelectors) {
+                        const element = $(selector);
+                        if (element.length > 0) {
+                            result[selector] = element.text();
+                        }
+                    }
+                    resolve(result);
                 });
             });
             req.on('error', (err: Error) => {

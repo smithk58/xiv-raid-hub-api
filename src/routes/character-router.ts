@@ -55,4 +55,13 @@ characterRouter.get('/:id/claim', async (ctx: RContext) => {
         ctx.notFound('That character doesn\'t exist in your characters.');
     }
 });
+characterRouter.get('/:id/lodestone', async (ctx: RContext) => {
+    const characterId = parseInt(ctx.params.id, 10);
+    const characterInfo = await characterService.getLodestoneCharacterInfo(characterId);
+    if (characterInfo) {
+        ctx.ok(characterInfo);
+    } else {
+        ctx.notFound('That character ');
+    }
+});
 export default characterRouter.routes();
