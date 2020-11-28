@@ -6,9 +6,11 @@ import { User } from '../models/User';
 import { UserService } from '../services/UserService';
 import { DiscordApi } from '../services/api-wrappers/discord/discord-api';
 import { Container } from 'typescript-ioc';
+import { EnvService } from '../services/EnvService';
 
 const discordApi: DiscordApi = Container.get(DiscordApi);
 const userService: UserService = Container.get(UserService);
+const envService: EnvService = Container.get(EnvService);
 
 // Needed for context type shenanigans
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
@@ -33,10 +35,18 @@ sessionRouter.get('/login', async (ctx: RContext) => {
                 userService.getAvatarUrl(discordUser),
                 user.timezone
             );
+            // Persist the grant to another spot, since ctx.session.grant can be overridden by other auths
+            ctx.session.discordGrant = oauthGrant;
         }
     }
-    const frontendURL = process.env.FRONTEND_BASE_URL || 'https://www.xivraidhub.com/';
-    ctx.redirect(frontendURL);
+    ctx.redirect(envService.frontendBaseURL);
+});
+sessionRouter.get('/fflogs', async (ctx: RContext) => {
+    const oauthGrant = ctx.session.grant;
+    if (oauthGrant) {
+        // TODO save tokens, don't care about private reports at the moment though
+    }
+    ctx.redirect(envService.frontendBaseURL);
 });
 /**
  * Made on page load and after session changes (e.g. login/logout) to give misc. session information.

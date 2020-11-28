@@ -1,0 +1,19 @@
+{
+  "defaults": {
+    "transport": "session",
+    "state": true
+  },
+  "discord": {
+    "scope": [
+      "identify",
+      "email",
+      "guilds"
+    ]
+  },
+  "fflogs": {
+    "authorize_url": "https://www.fflogs.com/oauth/authorize",
+    "access_url": "https://www.fflogs.com/oauth/token",
+    "oauth": 2,
+    "meta": "Only works for authing to the private API"
+  }
+}

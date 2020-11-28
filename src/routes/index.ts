@@ -9,6 +9,7 @@ import GuildsRouter from './guilds-router';
 import AlarmRouter from './alarm-router';
 import BotRouter from './bot-router';
 import CurrentUserRouter from './current-user-router';
+import FFLogsRouter from './fflogs-router';
 
 const apiRouter = new Router({prefix: '/api'});
 apiRouter.use(SessionRouter);
@@ -20,4 +21,5 @@ apiRouter.use(GuildsRouter);
 apiRouter.use(AlarmRouter);
 apiRouter.use(BotRouter);
 apiRouter.use(CurrentUserRouter);
+apiRouter.use(FFLogsRouter);
 export default apiRouter;

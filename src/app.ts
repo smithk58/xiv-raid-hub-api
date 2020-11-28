@@ -11,32 +11,40 @@ import apiRouter from './routes';
 import { createConnection } from 'typeorm';
 import { checkOriginAgainstWhitelist } from './utils/middleware/origin-whitelist';
 import { handleError } from './utils/middleware/error-handler';
+import { Container } from 'typescript-ioc';
+import { EnvService } from './services/EnvService';
 require('dotenv').config();
 
+const envService: EnvService = Container.get(EnvService);
 const app: Koa = new Koa();
-app.keys = [process.env.APP_SECRET_KEY];
+app.keys = [envService.appSecretKey];
 // Security
 app.use(Helmet());
 // Generic error handling middleware.
 app.use(handleError);
 // Logger and CORS for local dev
-if (process.env.NODE_ENV === 'development') {
+if (envService.isDevelopment) {
     app.use(Logger());
     app.use(Cors({credentials: true}));
 } else {
-    const whitelist = process.env.ALLOWED_ORIGINS ? JSON.parse(process.env.ALLOWED_ORIGINS) : ['https://www.xivraidhub.com', 'https://bot.xivraidhub.com'];
-    app.use(Cors({credentials: true, origin: checkOriginAgainstWhitelist(whitelist)}));
+    app.use(Cors({credentials: true, origin: checkOriginAgainstWhitelist(envService.allowedOrigins)}));
 }
 
 // Use koa-session for session management
 app.use(session(app));
 
 // Use grant for oauth 2 handling
-const baseURL = process.env.BACKEND_BASE_URL || 'https://api.xivraidhub.com';
-const oAuthConfig = require('./config.json');
-oAuthConfig.defaults.origin = baseURL;
+const oAuthConfig = require('./oauth-config.json');
+oAuthConfig.defaults.origin = envService.backendBaseURL;
+// Discord oauth
 oAuthConfig.discord.callback = '/api/session/login';
-oAuthConfig.discord.secret = process.env.DISCORD_CLIENT_SECRET;
+oAuthConfig.discord.key = envService.discordClientID;
+oAuthConfig.discord.secret = envService.discordClientSecret;
+// FFlogs oauth (for private reports)
+oAuthConfig.fflogs.callback = '/api/session/fflogs';
+oAuthConfig.fflogs.key = envService.fflogsClientId;
+oAuthConfig.fflogs.secret = envService.fflogsClientSecret
+app.use(grant(oAuthConfig));
 app.use(grant(oAuthConfig));
 
 // Let's us parse JSON requests

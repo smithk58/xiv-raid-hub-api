@@ -19,13 +19,13 @@ raidGroupRouter.use(async (ctx: RContext, next) => {
     return next();
 });
 raidGroupRouter.get('/', async (ctx: RContext) => {
-    const oauthGrant = ctx.session.grant;
+    const oauthGrant = ctx.session.discordGrant;
     const targetGuild = ctx.query.targetGuildId;
     const guilds = await alarmService.getGuilds(oauthGrant.response.access_token, targetGuild);
     ctx.ok(guilds);
 });
 raidGroupRouter.get('/:id/channels', async (ctx: RContext) => {
-    const oauthGrant = ctx.session.grant;
+    const oauthGrant = ctx.session.discordGrant;
     const guildId = ctx.params.id;
     const channels = await alarmService.getGuildChannels(guildId, oauthGrant.response.access_token).catch((err) => {
         ctx.internalServerError('Unable to get channels for the selected server.');
@@ -38,7 +38,7 @@ raidGroupRouter.get('/:id/channels', async (ctx: RContext) => {
     }
 });
 raidGroupRouter.get('/:id/roles', async (ctx: RContext) => {
-    const oauthGrant = ctx.session.grant;
+    const oauthGrant = ctx.session.discordGrant;
     const guildId = ctx.params.id;
     const channels = await alarmService.getGuildRoles(guildId, oauthGrant.response.access_token).catch((err) => {
         ctx.internalServerError('Unable to get roles for the selected server.');

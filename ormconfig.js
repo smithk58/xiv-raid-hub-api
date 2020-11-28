@@ -1,5 +1,5 @@
-let fileExt = process.env.NODE_ENV === 'development' ? 'ts' : 'js';
-let srcDir = process.env.NODE_ENV === 'development' ? 'src' : 'dist'
+let fileExt = process.env.NODE_ENV === 'dev' ? 'ts' : 'js';
+let srcDir = process.env.NODE_ENV === 'dev' ? 'src' : 'dist'
 let config = {
     "type": "postgres",
     "url": process.env.DB_URL,
