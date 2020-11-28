@@ -27,7 +27,7 @@ export class EnvService {
         return process.env.DISCORD_CLIENT_SECRET;
     }
     public get fflogsClientId() {
-        return process.env.FFLOGS_CLIENT_ID || '9208f102-7c71-49f1-b072-3498ad44e84d';
+        return process.env.FFLOGS_CLIENT_ID || '921e69e9-51b6-4938-80e9-bbab592b3e93';
     }
     public get fflogsClientSecret() {
         return process.env.FFLOGS_SECRET;
