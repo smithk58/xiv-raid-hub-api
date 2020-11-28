@@ -43,7 +43,7 @@ oAuthConfig.discord.secret = envService.discordClientSecret;
 // FFlogs oauth (for private reports)
 oAuthConfig.fflogs.callback = '/api/session/fflogs';
 oAuthConfig.fflogs.key = envService.fflogsClientId;
-oAuthConfig.fflogs.secret = envService.fflogsClientSecret
+oAuthConfig.fflogs.secret = envService.fflogsClientSecret;
 app.use(grant(oAuthConfig));
 app.use(grant(oAuthConfig));
 
