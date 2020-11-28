@@ -1,0 +1,15 @@
+{
+  "name": "FFLogs GraphQL Schema",
+  "schemaPath": "schema.graphql",
+  "extensions": {
+    "endpoints": {
+      "Default GraphQL Endpoint": {
+        "url": "https://www.fflogs.com/api/v2/client",
+        "headers": {
+          "authorization": "Bearer <token>"
+        },
+        "introspect": false
+      }
+    }
+  }
+}
