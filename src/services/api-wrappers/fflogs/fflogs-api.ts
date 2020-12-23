@@ -2,34 +2,132 @@ import { Inject, Singleton } from 'typescript-ioc';
 import fetch, { Response } from 'node-fetch';
 import { gql, GraphQLClient } from 'graphql-request';
 
-import { Query } from '../../../fflogs-types';
+import { Query, Region, Server, Spec } from '../../../fflogs-types';
 import { URLSearchParams } from 'url';
 import { EnvService } from '../../EnvService';
+import { CacheService } from '../../CacheService';
 
 @Singleton
 export class FFLogsAPI {
     private static baseURL = 'https://www.fflogs.com/api/v2/client';
     @Inject private envService: EnvService;
+    @Inject private cacheService: CacheService;
     private publicAccessToken: string;
     private client = new GraphQLClient(FFLogsAPI.baseURL);
+
+    /**
+     * Returns a list of FF14 classes.
+     */
     public async getClasses() {
-        const query = /* GraphQL*/ gql`
-            {
-                gameData {
-                    classes {
-                        id,
-                        name,
-                        specs {
+        const cacheKey = 'ffClasses';
+        let classes =  this.cacheService.get<Spec[]>(cacheKey);
+        if (classes === undefined) {
+            const query = /* GraphQL*/ gql`
+                {
+                    gameData {
+                        classes {
                             id,
-                            name
+                            name,
+                            specs {
+                                id,
+                                name
+                            }
                         }
+                    }
+                }
+            `;
+            const result = await this.client.request<Query>(query);
+            // TODO error handling https://www.npmjs.com/package/graphql-request
+            classes = result.gameData.classes[0].specs;
+            this.cacheService.set<Spec[]>(cacheKey, classes);
+        }
+        return classes;
+    }
+
+    /**
+     * Returns a list of FF14 server regions.
+     */
+    public async getRegions() {
+        const cacheKey = 'ffRegions';
+        let regions =  this.cacheService.get<Region[]>(cacheKey);
+        if (regions === undefined) {
+            const query = /* GraphQL*/ gql`
+                {
+                    worldData {
+                        regions {
+                            id,
+                            name,
+                            slug
+                        }
+                    }
+                }
+            `;
+            const result = await this.client.request<Query>(query);
+            // TODO error handling https://www.npmjs.com/package/graphql-request
+            regions = result.worldData.regions;
+            this.cacheService.set<Region[]>(cacheKey, regions);
+        }
+        return regions;
+    }
+
+    /**
+     * Returns a list of FF14 servers.
+     */
+    public async getServers() {
+        const cacheKey = 'ffServers';
+        let servers =  this.cacheService.get<Server[]>(cacheKey);
+        if (servers === undefined) {
+            const query = /* GraphQL*/ gql`
+                {
+                    worldData {
+                        regions {
+                            servers {
+                                data {
+                                    id,
+                                    name,
+                                    slug
+                                }
+                            }
+                        }
+                    }
+                }
+            `;
+            const result = await this.client.request<Query>(query);
+            // TODO error handling
+            servers = [];
+            for (const region of result.worldData.regions) {
+                servers = servers.concat(region.servers.data);
+            }
+            this.cacheService.set<Server[]>(cacheKey, servers);
+        }
+        return servers;
+    }
+
+    /**
+     * Returns a character. Useful for getting the characters FFlogs character ID for doing other character specific operations.
+     * @param name - The name of the character to search for.
+     * @param serverSlug - The FFlogs server slug of the character.
+     * @param serverRegion - The region of the server.
+     */
+    public async getCharacter(name: string, serverSlug: string, serverRegion: string) {
+        const variables = {
+            name,
+            serverSlug,
+            serverRegion
+        };
+        const query = /* GraphQL*/ gql`
+            query getCharacter($name: String, $serverSlug: String, $serverRegion: String) {
+                characterData {
+                    character(name: $name, serverSlug: $serverSlug, serverRegion: $serverRegion) {
+                        id,
+                        name
                     }
                 }
             }
         `;
-        const result = await this.client.request<Query>(query);
-        // TODO error handling
-        return result.gameData.classes[0].specs;
+        const result = await this.client.request<Query>(query, variables);
+        // TODO error handling https://www.npmjs.com/package/graphql-request
+        return result.characterData.character;
     }
     public publicTokenIsSet() {
         return typeof(this.publicAccessToken) !== 'undefined';

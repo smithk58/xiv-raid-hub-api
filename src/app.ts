@@ -45,7 +45,6 @@ oAuthConfig.fflogs.callback = '/api/session/fflogs';
 oAuthConfig.fflogs.key = envService.fflogsClientId;
 oAuthConfig.fflogs.secret = envService.fflogsClientSecret;
 app.use(grant(oAuthConfig));
-app.use(grant(oAuthConfig));
 
 // Let's us parse JSON requests
 app.use(bodyParser({

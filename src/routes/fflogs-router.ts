@@ -21,4 +21,12 @@ fflogsRouter.get('/classes', async (ctx: RContext) => {
     const classes = await ffLogsApi.getClasses();
     ctx.ok(classes);
 });
+fflogsRouter.get('/regions', async (ctx: RContext) => {
+    const regions = await ffLogsApi.getRegions();
+    ctx.ok(regions);
+});
+fflogsRouter.get('/servers', async (ctx: RContext) => {
+    const servers = await ffLogsApi.getServers();
+    ctx.ok(servers);
+});
 export default fflogsRouter.routes();
