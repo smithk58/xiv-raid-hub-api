@@ -102,14 +102,6 @@ export class AlarmService {
             .where('id = :id', {id: alarmId})
             .execute();
     }
-
-    public async deleteRaidGroupAlarms(entityManager: EntityManager, raidGroupId: number) {
-        return entityManager.createQueryBuilder()
-            .delete()
-            .from(Alarm)
-            .where('"raidGroupId" = :id', {id: raidGroupId})
-            .execute();
-    }
     /**
      * Returns the specified guild with both channels and roles resolved, if both the user and bot have access to the guild.
      * @param token - The discord token for the current user, for retrieving the guilds they're in.
