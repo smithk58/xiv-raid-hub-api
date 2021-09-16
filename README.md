@@ -8,7 +8,7 @@ Run `npm run build` to build the project. The build artifacts will be stored in 
 
 ## Production
 
-The application can be run in product by executing the `build` steps, followed by the `npm run start` script.
+The application can be run in production by executing the `build` steps, followed by the `npm run start` script.
 
 ## Lint
 
@@ -21,7 +21,7 @@ Put these values in a [`.env`](https://www.npmjs.com/package/dotenv) file or in 
 ### Required
 
 * `APP_SECRET_KEY` - A large random key, used for securing cookies.
-* `DISCORD_CLIENT_ID` - The client ID for a discord app. Will be used when authentication users for this application via discords oauth.
+* `DISCORD_CLIENT_ID` - The client ID for a discord app. Will be used when authenticating users for this application via discords oauth.
 * `DISCORD_CLIENT_SECRET` - The secret for the above ID.
 * `DB_URL` - A connection string for a postgres DB to manage the application. The DB itself will be automatically managed by TypeORM.
 ### Optional
