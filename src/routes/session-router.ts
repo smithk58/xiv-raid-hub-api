@@ -54,7 +54,7 @@ sessionRouter.get('/fflogs', async (ctx: RContext) => {
 sessionRouter.get('/', async (ctx: RContext) => {
     ctx.session.timezone = ctx.query.timezone;
     // Figure out the abbreviated timezone (e.g. CST)
-    const timezone = userService.getPrettyTimezone(ctx.query.timezone);
+    const timezone = userService.getPrettyTimezone(ctx.query.timezone as string);
     const user = ctx.session.user;
     ctx.ok(new Session(user, timezone));
 });

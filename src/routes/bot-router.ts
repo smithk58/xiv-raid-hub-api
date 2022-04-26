@@ -19,8 +19,8 @@ botRouter.use(async (ctx: RContext, next) => {
 });
 
 botRouter.get('/scheduled-alarms', async (ctx: RContext) => {
-    const utcHour = parseInt(ctx.query.utcHour, 10);
-    const utcMinute = parseInt(ctx.query.utcMinute, 10);
+    const utcHour = parseInt(ctx.query.utcHour as string, 10);
+    const utcMinute = parseInt(ctx.query.utcMinute as string, 10);
     const alarms = await alarmService.getScheduledAlarms(utcHour, utcMinute);
     ctx.ok(alarms);
 });

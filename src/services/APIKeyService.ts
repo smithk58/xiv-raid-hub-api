@@ -12,7 +12,7 @@ export class APIKeyService {
      * @param ctx - The context to search for an API key on.
      */
     public async errorIfNotValidAPIKey(ctx: RContext) {
-        const apiKey = ctx.query.api_key;
+        const apiKey = ctx.query.api_key as string;
         const apiKeyMap = await this.getAPIKeyMap();
         const isValid = typeof(apiKeyMap[apiKey]) !== 'undefined';
         if (!isValid) {

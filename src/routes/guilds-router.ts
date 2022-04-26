@@ -20,7 +20,7 @@ raidGroupRouter.use(async (ctx: RContext, next) => {
 });
 raidGroupRouter.get('/', async (ctx: RContext) => {
     const oauthGrant = ctx.session.discordGrant;
-    const targetGuild = ctx.query.targetGuildId;
+    const targetGuild = ctx.query.targetGuildId as string;
     const guilds = await alarmService.getGuilds(oauthGrant.response.access_token, targetGuild);
     ctx.ok(guilds);
 });

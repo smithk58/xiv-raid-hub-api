@@ -16,6 +16,7 @@ import { EnvService } from './services/EnvService';
 require('dotenv').config();
 
 const envService: EnvService = Container.get(EnvService);
+
 const app: Koa = new Koa();
 app.keys = [envService.appSecretKey];
 // Security
@@ -58,7 +59,12 @@ app.use(bodyParser({
 app.use(respond());
 
 // Create connection to DB
-createConnection();
+createConnection().then(() => {
+   console.log('DB connection successful');
+}, (err) => {
+    console.log('DB connection failed', err);
+});
+
 // Routes
 app.use(apiRouter.routes());
 app.use(apiRouter.allowedMethods());

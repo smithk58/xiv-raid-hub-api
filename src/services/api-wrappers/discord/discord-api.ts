@@ -15,16 +15,16 @@ export class DiscordApi {
         const response = await fetch(url, {
             headers: {Authorization: 'Bearer ' + token}
         });
-        return this.handleResponse(response);
+        return await this.handleResponse(response) as Promise<DiscordUser>;
     }
     public async getGuilds(token: string): Promise<DiscordGuildWithChannels[]> {
         const url = DiscordApi.baseURL + '/users/@me/guilds';
         const response = await fetch(url, {
             headers: {Authorization: 'Bearer ' + token}
         });
-        return this.handleResponse(response);
+        return await this.handleResponse(response) as Promise<DiscordGuildWithChannels[]>;
     }
-    private async handleResponse(response: Response) {
+    private async handleResponse(response: Response): Promise<unknown> {
         if (response.status !== 200) {
             return Promise.reject(response);
         }
