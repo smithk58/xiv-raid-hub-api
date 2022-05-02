@@ -6,6 +6,7 @@ import { Query, Region, Server, Spec } from '../../../fflogs-types';
 import { URLSearchParams } from 'url';
 import { EnvService } from '../../EnvService';
 import { CacheService } from '../../CacheService';
+import { XIVClasses } from '../../../constants';
 
 @Singleton
 export class FFLogsAPI {
@@ -19,10 +20,11 @@ export class FFLogsAPI {
      * Returns a list of FF14 classes.
      */
     public async getClasses() {
-        const cacheKey = 'ffClasses';
+        /*const cacheKey = 'ffClasses';
         let classes =  this.cacheService.get<Spec[]>(cacheKey);
+        // TODO recently started throwing an error for no apparent reason if you query specs or anything below it
         if (classes === undefined) {
-            const query = /* GraphQL*/ gql`
+            const query = /!* GraphQL*!/ gql`
                 {
                     gameData {
                         classes {
@@ -40,8 +42,8 @@ export class FFLogsAPI {
             // TODO error handling https://www.npmjs.com/package/graphql-request
             classes = result.gameData.classes[0].specs;
             this.cacheService.set<Spec[]>(cacheKey, classes);
-        }
-        return classes;
+        }*/
+        return XIVClasses;
     }
 
     /**
