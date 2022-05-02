@@ -13,7 +13,7 @@ type Bracket {
     "An integer representing the minimum value used by bracket number 1, etc."
     min: Float!
     "The localized name of the bracket type."
-    type: String!
+    type: String
 }
 
 "A player character. Characters can earn individual rankings and appear in reports."
@@ -47,8 +47,10 @@ type Character {
         "Optional. Whether or not the returned report rankings should be compared against today's rankings or historical rankings around the time the fight occurred."
         timeframe: RankingTimeframeType = Historical
     ): JSON
-    "Cached game data such as gear for the character. This data was fetched from the appropriate source (Blizzard APIs for WoW, XIVAPI for FF). This call will only return a cached copy of the data if it exists already. It will not go out to Blizzard or XIVAPI to fetch a new copy."
+    "Cached game data such as gear for the character. This data was fetched from the appropriate source (Blizzard APIs for WoW, Lodestone for FF). This call will only return a cached copy of the data if it exists already. It will not go out to Blizzard or Lodestone to fetch a new copy."
     gameData(
+        "Optional. Whether or not to force the updating of the character before returning the game data."
+        forceUpdate: Boolean = false,
         "Optional. A specific spec ID to retrieve information for. If omitted, the last observed spec on Armory (WoW) or Lodestone (FF) will be used."
         specID: Int = 0
     ): JSON
@@ -103,7 +105,7 @@ type CharacterData {
         name: String,
         "Optional. The region for a specific character. Must be used in conjunction with name and serverRegion to uniquely identify a character."
         serverRegion: String,
-        "Optional. The name of a specific character. Must be used in conjunction with name and serverRegion to uniquely identify a character."
+        "Optional. The slug of a specific server. Must be used in conjunction with name and serverRegion to uniquely identify a character."
         serverSlug: String
     ): Character
     "A collection of characters for a specific guild."
@@ -214,6 +216,79 @@ type Expansion {
     zones: [Zone]
 }
 
+type ExtendedData {
+    "Obtain a specific zone by its ID."
+    zone(
+        "Required. The ID of a specific zone."
+        id: Int
+    ): ExtendedZone
+}
+
+type ExtendedZone {
+    "The bracket information for this zone. This field will be null if the zone does not support brackets."
+    brackets: Bracket
+    "Player rankings information for a zone. This data is not considered frozen, and it can change without notice. Use at your own risk."
+    characterRankings(
+        "Optional. A specific bracket (e.g., item level range) to use instead of overall rankings. For WoW, brackets are item levels or keystones. For FF, brackets are patches."
+        bracket: Int = 0,
+        "Optional. The slug for a specific class. Whether or not to filter rankings to a specific class. If omitted, data for all classes will be used."
+        className: String = "Any",
+        "Optional. A specific difficulty to fetch rankings for. If omitted, the highest difficulty is used."
+        difficulty: Int = 0,
+        "Optional. A filter string for advanced searching. The syntax matches the one used on the web site exactly, so you can filter encounter rankings on the site to figure out the string to use."
+        filter: String = "",
+        "Optional. You can filter to a specific player metric like dps or hps. If omitted, an appropriate default player metric for the zone will be chosen."
+        metric: CharacterRankingMetricType = default,
+        "Optional. Which page of rankings to fetch. By default the first page is used."
+        page: Int = 1,
+        "Optional. Whether or not to filter the rankings to a specific partition. By default, the latest partition is chosen."
+        partition: Int = 0,
+        "Optional. The short name of a region to filter to. If paired with a server slug, will uniquely identify a server. If used by itself, rankings for that specific region will be fetched."
+        serverRegion: String = "",
+        "Optional. The slug for a specific server. Whether or not to filter rankings to a specific server. If omitted, data for all servers will be used."
+        serverSlug: String = "",
+        "Optional. Whether or not to filter rankings to a specific size. If omitted, the first valid raid size will be used."
+        size: Int = 0,
+        "Optional. The slug for a specific spec. Whether or not to filter rankings to a specific spec. If omitted, data for all specs will be used."
+        specName: String = "Any"
+    ): JSON
+    "A list of all the difficulties supported for this zone."
+    difficulties: [Difficulty]
+    "The encounters found within this zone."
+    encounters: [Encounter]
+    "The expansion that this zone belongs to."
+    expansion: Expansion!
+    "Fight rankings information for a zone. This data is not considered frozen, and it can change without notice. Use at your own risk."
+    fightRankings(
+        "Optional. A specific bracket (e.g., item level range) to use instead of overall rankings. For WoW, brackets are item levels or keystones. For FF, brackets are patches."
+        bracket: Int = 0,
+        "Optional. A specific difficulty to fetch rankings for. If omitted, the highest difficulty is used."
+        difficulty: Int = 0,
+        "Optional. A filter string for advanced searching. The syntax matches the one used on the web site exactly, so you can filter encounter rankings on the site to figure out the string to use."
+        filter: String = "",
+        "Optional. You can filter to a specific fight metric like speed or execution. If omitted, an appropriate default fight metric for the zone will be chosen."
+        metric: FightRankingMetricType = default,
+        "Optional. Which page of rankings to fetch. By default the first page is used."
+        page: Int = 1,
+        "Optional. Whether or not to filter the rankings to a specific partition. By default, the latest partition is chosen."
+        partition: Int = 0,
+        "Optional. The short name of a region to filter to. If paired with a server slug, will uniquely identify a server. If used by itself, rankings for that specific region will be fetched."
+        serverRegion: String = "",
+        "Optional. The slug for a specific server. Whether or not to filter rankings to a specific server. If omitted, data for all servers will be used."
+        serverSlug: String = "",
+        "Optional. Whether or not to filter rankings to a specific size. If omitted, the first valid raid size will be used."
+        size: Int = 0
+    ): JSON
+    "Whether or not the entire zone (including all its partitions) is permanently frozen. When a zone is frozen, data involving that zone will never change and can be cached forever."
+    frozen: Boolean!
+    "The ID of the zone."
+    id: Int!
+    "The name of the zone."
+    name: String!
+    "A list of all the partitions supported for this zone."
+    partitions: [Partition]
+}
+
 "A single ability for the game."
 type GameAbility {
     "A description for the ability if it is available."
@@ -309,6 +384,30 @@ type GameData {
     ): [GameClass]
     "Obtain all the factions that guilds and players can belong to."
     factions: [GameFaction]
+    "Obtain a single item for the game."
+    item(
+        "Required. Specify a specific item to retrieve by its id."
+        id: Int
+    ): GameItem
+    "Items for the game."
+    items(
+        "Optional. The number of items to retrieve per page. If omitted, defaults to 100. The maximum allowed value is 100, and minimum allowed value is 1."
+        limit: Int = 100,
+        "Optional. The page of paginated data to retrieve. If omitted, defaults to the first page."
+        page: Int = 1
+    ): GameItemPagination
+    "Obtain a single map for the game."
+    map(
+        "Required. Specify a specific map to retrieve by its id."
+        id: Int
+    ): GameMap
+    "Maps for the game."
+    maps(
+        "Optional. The number of maps to retrieve per page. If omitted, defaults to 100. The maximum allowed value is 100, and minimum allowed value is 1."
+        limit: Int = 100,
+        "Optional. The page of paginated data to retrieve. If omitted, defaults to the first page."
+        page: Int = 1
+    ): GameMapPagination
 }
 
 "A single enchant for the game."
@@ -337,6 +436,25 @@ type GameItem {
     name: String
 }
 
+type GameItemPagination {
+    "Current page of the cursor"
+    current_page: Int!
+    "List of items on the current page"
+    data: [GameItem]
+    "Number of the first item returned"
+    from: Int
+    "Determines if cursor has more pages after the current page"
+    has_more_pages: Boolean!
+    "The last page (number of pages)"
+    last_page: Int!
+    "Number of items returned per page"
+    per_page: Int!
+    "Number of the last item returned"
+    to: Int
+    "Number of total items selected by the query"
+    total: Int!
+}
+
 "A single item set for the game."
 type GameItemSet {
     "The ID of the item set."
@@ -347,10 +465,37 @@ type GameItemSet {
 
 "A single map for the game."
 type GameMap {
-    "The ID of the mao."
+    "The image for the map. Will be null if no file information exists for the map."
+    filename: String
+    "The ID of the map."
     id: Int!
     "The localized name of the map. Will be null if no localization information exists for the map."
     name: String
+    "The x offset for the map."
+    offsetX: Int
+    "The y offset for the map."
+    offsetY: Int
+    "The scale factor for the map."
+    sizeFactor: Int
+}
+
+type GameMapPagination {
+    "Current page of the cursor"
+    current_page: Int!
+    "List of items on the current page"
+    data: [GameMap]
+    "Number of the first item returned"
+    from: Int
+    "Determines if cursor has more pages after the current page"
+    has_more_pages: Boolean!
+    "The last page (number of pages)"
+    last_page: Int!
+    "Number of items returned per page"
+    per_page: Int!
+    "Number of the last item returned"
+    to: Int
+    "Number of total items selected by the query"
+    total: Int!
 }
 
 "A single NPC for the game."
@@ -364,7 +509,7 @@ type GameNPC {
 "A single zone for the game."
 type GameZone {
     "The ID of the zone."
-    id: Int!
+    id: Float!
     "The localized name of the zone. Will be null if no localization information exists for the zone."
     name: String
 }
@@ -486,7 +631,7 @@ type GuildPagination {
     total: Int!
 }
 
-"The tag for a specific guild. Tags can be used to categorize reports within a guild. In the site UI, they are referred to as raid teams."
+"The tag for a specific guild. Tags can be used to categorize reports within a guild. In the site UI, they are referred to as report tags."
 type GuildTag {
     "The guild that the tag belongs to."
     guild: Guild!
@@ -518,6 +663,42 @@ type PlayerAttendance {
     type: String
 }
 
+"A way to obtain data for the top guilds involved in an ongoing world first or realm first progress race."
+type ProgressRaceData {
+    "Detail composition data for a given guild and encounter."
+    detailedComposition(
+        "Optional. If not specified, the highest difficulty will be used."
+        difficulty: Int = 0,
+        "Optional. If not specified, the current boss that is being pulled will be used."
+        encounterID: Int = 0,
+        "Optional. The ID of a single guild to retrieve."
+        guildID: Int,
+        "Optional. The name of a specific guild. Must be used in conjunction with serverSlug and serverRegion to uniquely identify a guild."
+        guildName: String,
+        "Optional. The region for a specific guild. Must be used in conjunction with name and serverRegion to uniquely identify a guild."
+        serverRegion: String,
+        "Optional. The name of a specific guild. Must be used in conjunction with name and serverRegion to uniquely identify a guild."
+        serverSlug: String
+    ): JSON
+    "Progress race information including best percentages, pull counts and streams for top guilds. This API is only active when there is an ongoing race. The format of this JSON may change without notice and is not considered frozen."
+    progressRace(
+        "Optional. If not specified, the highest difficulty will be used."
+        difficulty: Int = 0,
+        "Optional. The ID of a single guild to retrieve."
+        guildID: Int,
+        "Optional. The name of a specific guild. Must be used in conjunction with serverSlug and serverRegion to uniquely identify a guild."
+        guildName: String,
+        "Optional. The short name of a region to filter to. If paired with a server slug, will uniquely identify a server. If used by itself, rankings for that specific region will be fetched."
+        serverRegion: String = "",
+        "Optional. The slug for a specific server. Whether or not to filter rankings to a specific server. If omitted, data for all servers will be used."
+        serverSlug: String = "",
+        "Optional. The short name of a subregion to filter to. Must be paired with serverRegion. Rankings for that specific subregion will be fetched."
+        serverSubregion: String = "",
+        "Optional. If not specified, the latest zone will be used."
+        zoneID: Int = 0
+    ): JSON
+}
+
 type Query {
     "Obtain the character data object that allows the retrieval of individual characters or filtered collections of characters."
     characterData: CharacterData
@@ -525,10 +706,14 @@ type Query {
     gameData: GameData
     "Obtain the guild data object that allows the retrieval of individual guilds or filtered collections of guilds."
     guildData: GuildData
+    "Obtain information about an ongoing world first or realm first race. Inactive when no race is occurring. This data only updates once every 30 seconds, so you do not need to fetch this information more often than that."
+    progressRaceData: ProgressRaceData
     "Obtain the rate limit data object to see how many points have been spent by this key."
     rateLimitData: RateLimitData
     "Obtain the report data object that allows the retrieval of individual reports or filtered collections of reports by guild or by user."
     reportData: ReportData
+    "Obtain the user object that allows the retrieval of the authorized user's id and username."
+    userData: UserData
     "Obtain the world data object that holds collections of data such as all expansions, regions, subregions, servers, dungeon/raid zones, and encounters."
     worldData: WorldData
 }
@@ -566,6 +751,8 @@ type Region {
 
 "A single report uploaded by a player to a guild or personal logs."
 type Report {
+    "Whether this report has been archived. Events, tables, and graphs for archived reports are inaccessible unless the retrieving user has a subscription including archive access."
+    archiveStatus: ReportArchiveStatus
     "The report code, a unique value used to identify the report."
     code: String!
     "The end time of the report. This is a UNIX timestamp representing the timestamp of the last event contained in the report."
@@ -596,6 +783,10 @@ type Report {
         killType: KillType = All,
         "Optional. How many events to retrieve. Allowed value ranges are 100-10000. The default value is 300."
         limit: Int = 300,
+        "A comma-separated list of auras that must be absent on the source for the event to be included."
+        sourceAurasAbsent: String = "",
+        "A comma-separated list of auras that must be present on the source for the event to be included."
+        sourceAurasPresent: String = "",
         "Optional. Whether or not to filter the fights to a specific source class. The argument here is the class slug, obtainable from game data."
         sourceClass: String = "Any",
         "Optional. Whether or not to filter the fights to a specific source actor ID. By default all sources are included."
@@ -604,14 +795,22 @@ type Report {
         sourceInstanceID: Int = 0,
         "Optional. The start time of the events range to fetch."
         startTime: Float = 0.0,
+        "A comma-separated list of auras that must be absent on the target for the event to be included."
+        targetAurasAbsent: String = "",
+        "A comma-separated list of auras that must be present on the target for the event to be included."
+        targetAurasPresent: String = "",
         "Optional. Whether or not to filter the fights to a specific target class. The argument here is the class slug, obtainable from game data."
         targetClass: String = "Any",
         "Optional. Whether or not to filter the fights to a specific target actor ID. By default all targets are included."
         targetID: Int = 0,
         "Optional. Whether or not to filter the fights to a specific target actor instance ID. By default all instances of an actor are included."
         targetInstanceID: Int = 0,
-        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false is speed is a priority, and you do not care about the names."
+        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false if is a priority, and you do not care about the names."
         translate: Boolean = true,
+        "Optional. Whether or not to include detailed ability information. Adds substantially to bandwidth, so defaults to true. Set to false if you do not want to fetch the master data of the report."
+        useAbilityIDs: Boolean = true,
+        "Optional. Whether or not to include detailed actor information. Adds substantially to bandwidth, so defaults to true. Set to false if you do not want to fetch the master data of the report."
+        useActorIDs: Boolean = true,
         "Optional. A bitfield set of options used in the site UI. You can experiment in each view with the options to see what these values are."
         viewOptions: Int,
         "Optional. The number of deaths after which all subsequent events should be ignored."
@@ -629,7 +828,7 @@ type Report {
         fightIDs: [Int] = [],
         "Optional. A filter to only include kills, wipes, encounters or trash."
         killType: KillType = All,
-        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false is speed is a priority, and you do not care about the names."
+        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false if speed is a priority, and you do not care about the names."
         translate: Boolean = true
     ): [ReportFight]
     "A graph of information for a report, filterable via arguments like type, source, target, ability, etc. This data is not considered frozen, and it can change without notice. Use at your own risk."
@@ -654,6 +853,10 @@ type Report {
         hostilityType: HostilityType = Friendlies,
         "Optional. A filter to only include kills, wipes, encounters or trash."
         killType: KillType = All,
+        "A comma-separated list of auras that must be absent on the source for the event to be included."
+        sourceAurasAbsent: String = "",
+        "A comma-separated list of auras that must be present on the source for the event to be included."
+        sourceAurasPresent: String = "",
         "Optional. Whether or not to filter the fights to a specific source class. The argument here is the class slug, obtainable from game data."
         sourceClass: String = "Any",
         "Optional. Whether or not to filter the fights to a specific source actor ID. By default all sources are included."
@@ -662,13 +865,17 @@ type Report {
         sourceInstanceID: Int = 0,
         "Optional. The start time of the events range to fetch."
         startTime: Float = 0.0,
+        "A comma-separated list of auras that must be absent on the target for the event to be included."
+        targetAurasAbsent: String = "",
+        "A comma-separated list of auras that must be present on the target for the event to be included."
+        targetAurasPresent: String = "",
         "Optional. Whether or not to filter the fights to a specific target class. The argument here is the class slug, obtainable from game data."
         targetClass: String = "Any",
         "Optional. Whether or not to filter the fights to a specific target actor ID. By default all targets are included."
         targetID: Int = 0,
         "Optional. Whether or not to filter the fights to a specific target actor instance ID. By default all instances of an actor are included."
         targetInstanceID: Int = 0,
-        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false is speed is a priority, and you do not care about the names."
+        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false if speed is a priority, and you do not care about the names."
         translate: Boolean = true,
         "Optional. Whether to view by source, by target or by ability."
         viewBy: ViewType = Default,
@@ -681,15 +888,30 @@ type Report {
     guild: Guild
     "The guild tag that the report belongs to. If this is null, then the report was not tagged."
     guildTag: GuildTag
-    "For guilds in competition mode, it is possible to obtain some basic information about the report, e.g., the fight and summary table info. If this flag is set, it indicates that you have only limited access to this report's information"
-    limitedAccess: Boolean
     "Data from the report's master file. This includes version info, all of the players, NPCs and pets that occur in the report, and all the game abilities used in the report."
     masterData(
-        "Optional. Whether or not the actors and abilities in the master data should be auto-translated. Defaults to true. Set to false is speed is a priority, and you do not care about the names of abilities and actors."
+        "Optional. Whether or not the actors and abilities in the master data should be auto-translated. Defaults to true. Set to false if speed is a priority, and you do not care about the names of abilities and actors."
         translate: Boolean = true
     ): ReportMasterData
     "The user that uploaded the report."
     owner: User
+    "A table of information for the players of a report, including their specs, talents, gear, etc. This data is not considered frozen, and it can change without notice. Use at your own risk."
+    playerDetails(
+        "Optional. Whether or not to filter the fights to a specific difficulty. By default all fights are included."
+        difficulty: Int = 0,
+        "Optional. Whether or not to filter the fights to a specific boss. By default all fights are included."
+        encounterID: Int = 0,
+        "Optional. The end time of the events range to fetch."
+        endTime: Float = 0.0,
+        "Optional. A list of fight ids to include. Fights with any other id will be excluded."
+        fightIDs: [Int] = [],
+        "Optional. A filter to only include kills, wipes, encounters or trash."
+        killType: KillType = All,
+        "Optional. The start time of the events range to fetch."
+        startTime: Float = 0.0,
+        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false if speed is a priority, and you do not care about the names."
+        translate: Boolean = true
+    ): JSON
     "A list of all characters that ranked on kills in the report."
     rankedCharacters: [Character]
     "Rankings information for a report, filterable to specific fights, bosses, metrics, etc. This data is not considered frozen, and it can change without notice. Use at your own risk."
@@ -737,6 +959,10 @@ type Report {
         hostilityType: HostilityType = Friendlies,
         "Optional. A filter to only include kills, wipes, encounters or trash."
         killType: KillType = All,
+        "A comma-separated list of auras that must be absent on the source for the event to be included."
+        sourceAurasAbsent: String = "",
+        "A comma-separated list of auras that must be present on the source for the event to be included."
+        sourceAurasPresent: String = "",
         "Optional. Whether or not to filter the fights to a specific source class. The argument here is the class slug, obtainable from game data."
         sourceClass: String = "Any",
         "Optional. Whether or not to filter the fights to a specific source actor ID. By default all sources are included."
@@ -745,13 +971,17 @@ type Report {
         sourceInstanceID: Int = 0,
         "Optional. The start time of the events range to fetch."
         startTime: Float = 0.0,
+        "A comma-separated list of auras that must be absent on the target for the event to be included."
+        targetAurasAbsent: String = "",
+        "A comma-separated list of auras that must be present on the target for the event to be included."
+        targetAurasPresent: String = "",
         "Optional. Whether or not to filter the fights to a specific target class. The argument here is the class slug, obtainable from game data."
         targetClass: String = "Any",
         "Optional. Whether or not to filter the fights to a specific target actor ID. By default all targets are included."
         targetID: Int = 0,
         "Optional. Whether or not to filter the fights to a specific target actor instance ID. By default all instances of an actor are included."
         targetInstanceID: Int = 0,
-        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false is speed is a priority, and you do not care about the names."
+        "Optional. Whether or not the fight data should be auto-translated. Defaults to true. Set to false if speed is a priority, and you do not care about the names."
         translate: Boolean = true,
         "Optional. Whether to view by source, by target or by ability."
         viewBy: ViewType = Default,
@@ -800,6 +1030,16 @@ type ReportActor {
     type: String
 }
 
+"The archival status of a report."
+type ReportArchiveStatus {
+    "The date on which the report was archived (if it has been archived)."
+    archiveDate: Int
+    "Whether the current user can access the report. Always true if the report is not archived, and always false if not using user authentication."
+    isAccessible: Boolean!
+    "Whether the report has been archived."
+    isArchived: Boolean!
+}
+
 "The ReportData object enables the retrieval of single reports or filtered collections of reports."
 type ReportData {
     "Obtain a specific report by its code."
@@ -834,6 +1074,48 @@ type ReportData {
     ): ReportPagination
 }
 
+"The ReportDungeonPull represents a single pull that occurs in a containing dungeon."
+type ReportDungeonPull {
+    "The bounding box that encloses the positions of all players/enemies in the fight."
+    boundingBox: ReportMapBoundingBox
+    "The encounter ID of the fight. If the ID is 0, the fight is considered a trash fight."
+    encounterID: Int!
+    "The end time of the fight. This is a timestamp with millisecond precision that is relative to the start of the report, i.e., the start of the report is considered time 0."
+    endTime: Float!
+    "Information about enemies involved in the fight. Includes report IDs, instance counts, and instance group counts for each NPC."
+    enemyNPCs: [ReportDungeonPullNPC]
+    "The report ID of the fight. This ID can be used to fetch only events, tables or graphs for this fight."
+    id: Int!
+    "Whether or not the fight was a boss kill, i.e., successful. If this field is false, it means the fight was an incomplete run, etc.."
+    kill: Boolean
+    "All the maps that were involved in a pull."
+    maps: [ReportMap]
+    "The name of the fight."
+    name: String!
+    "The start time of the fight. This is a timestamp with millisecond precision that is relative to the start of the report, i.e., the start of the report is considered time 0."
+    startTime: Float!
+    "The x position of the first mob damaged in the pull at the time this damage happens. Used to establish a marker position to represent where the pull took place."
+    x: Int!
+    "The y position of the first mob damaged in the pull at the time this damage happens. Used to establish a marker position to represent where the pull took place."
+    y: Int!
+}
+
+"The ReportDungeonPullNPC represents participation info within a single dungeon pull for an NPC."
+type ReportDungeonPullNPC {
+    "The game ID of the actor, e.g., so it can be looked up on external Web sites."
+    gameID: Int
+    "The report ID of the actor. This ID is used in events to identify sources and targets."
+    id: Int
+    "The highest instance group ID seen during the pull."
+    maximumInstanceGroupID: Int
+    "The highest instance ID seen during the pull."
+    maximumInstanceID: Int
+    "The lowest instance group ID seen during the pull."
+    minimumInstanceGroupID: Int
+    "The lowest instance ID seen during the pull."
+    minimumInstanceID: Int
+}
+
 "The ReportEventPaginator represents a paginated list of report events."
 type ReportEventPaginator {
     "The list of events obtained."
@@ -848,28 +1130,50 @@ type ReportFight {
     averageItemLevel: Float
     "The percentage health of the active boss or bosses at the end of a fight."
     bossPercentage: Float
+    "The bounding box that encloses the positions of all players/enemies in the fight."
+    boundingBox: ReportMapBoundingBox
     "Whether or not a fight represents an entire raid from start to finish, e.g., in Classic WoW a complete run of Blackwing Lair."
     completeRaid: Boolean!
     "The difficulty setting for the raid, dungeon, or arena. Null for trash."
     difficulty: Int
+    "For a dungeon, a list of pulls that occurred in the dungeon. Pulls have details such as the enemies involved in the pull and map info showing where the pull took place."
+    dungeonPulls: [ReportDungeonPull]
     "The encounter ID of the fight. If the ID is 0, the fight is considered a trash fight."
     encounterID: Int!
     "The end time of the fight. This is a timestamp with millisecond precision that is relative to the start of the report, i.e., the start of the report is considered time 0."
     endTime: Float!
     "Information about enemy NPCs involved in the fight. Includes report IDs, instance counts, and instance group counts for each NPC."
     enemyNPCs: [ReportFightNPC]
+    "Information about enemy pets involved in the fight. Includes report IDs, instance counts, and instance group counts for each pet."
+    enemyPets: [ReportFightNPC]
     "The IDs of all players involved in a fight. These players can be referenced in the master data actors table to get detailed information about each participant."
     enemyPlayers: [Int]
     "The actual completion percentage of the fight. This is the field used to indicate how far into a fight a wipe was, since fights can be complicated and have multiple bosses, no bosses, bosses that heal, etc."
     fightPercentage: Float
     "Information about friendly NPCs involved in the fight. Includes report IDs, instance counts, and instance group counts for each NPC."
     friendlyNPCs: [ReportFightNPC]
+    "Information about friendly pets involved in the fight. Includes report IDs, instance counts, and instance group counts for each pet."
+    friendlyPets: [ReportFightNPC]
     "The IDs of all players involved in a fight. These players can be referenced in the master data actors table to get detailed information about each participant."
     friendlyPlayers: [Int]
+    "The game zone the fight takes place in. This should not be confused with the zones used by the sites for rankings. This is the actual in-game zone info."
+    gameZone: GameZone
+    "Whether or not the fight had Echo present."
+    hasEcho: Boolean
     "The report ID of the fight. This ID can be used to fetch only events, tables or graphs for this fight."
     id: Int!
-    "Whether or not the fight was a boss kill, i.e., successful. If this field is false, it means the fight was an incomplete run, etc.."
+    "Whether or not the fight is still in progress. If this field is false, it means the entire fight has been uploaded."
+    inProgress: Boolean
+    "Whether or not the fight was a boss kill, i.e., successful. If this field is false, it means the fight was a wipe or a failed run, etc.."
     kill: Boolean
+    "The phase that the encounter was in when the fight ended. Counts up from 1 based off the phase type (i.e., normal phase vs intermission)."
+    lastPhase: Int
+    "The phase that the encounter was in when the fight ended. Always increases from 0, so a fight with three real phases and two intermissions would count up from 0 to 4."
+    lastPhaseAsAbsoluteIndex: Int
+    "Whether or not the phase that the encounter was in when the fight ended was an intermission or not."
+    lastPhaseIsIntermission: Boolean
+    "All the maps that were involved in a fight. For single bosses this will usually be a single map, but for dungeons it will typically be multiple maps."
+    maps: [ReportMap]
     "The name of the fight."
     name: String!
     "The group size for the raid, dungeon, or arena. Null for trash."
@@ -878,20 +1182,40 @@ type ReportFight {
     standardComposition: Boolean
     "The start time of the fight. This is a timestamp with millisecond precision that is relative to the start of the report, i.e., the start of the report is considered time 0."
     startTime: Float!
-    "The ID of the game zone the fight takes place in. This should not be confused with the zones used by the sites for rankings. This is the actual in-game zone info."
-    zoneID: Int
-    "The name of the game zone the fight takes place in. This should not be confused with the zones used by the sites for rankings. This is the actual in-game zone info."
-    zoneName: String
+    "If a wipe was explicitly called using the Companion app, then this field will contain the time. This is a timestamp with millisecond precision that is relative to the start of the report, i.e., the start of the report is considered time 0."
+    wipeCalledTime: Float
 }
 
 "The ReportFightNPC represents participation info within a single fight for an NPC."
 type ReportFightNPC {
+    "The game ID of the actor. This ID is used in events to identify sources and targets."
+    gameID: Int
     "How many packs of the NPC were seen during the fight."
     groupCount: Int
     "The report ID of the actor. This ID is used in events to identify sources and targets."
     id: Int
     "How many instances of the NPC were seen during the fight."
     instanceCount: Int
+    "The report ID of the actor that owns this NPC (if it is a pet). This ID is used in events to identify sources and targets."
+    petOwner: Int
+}
+
+"The ReportMap represents a single map that a fight can occur on."
+type ReportMap {
+    "The map's game ID."
+    id: Int!
+}
+
+"The ReportMapBoundingBox is a box that encloses the positions of all players and enemies in a fight or dungeon pull."
+type ReportMapBoundingBox {
+    "The largest X position."
+    maxX: Int!
+    "The largest Y position."
+    maxY: Int!
+    "The smallest X position."
+    minX: Int!
+    "The smallest Y position."
+    minY: Int!
 }
 
 "The ReporMastertData object contains information about the log version of a report, as well as the actors and abilities used in the report."
@@ -977,7 +1301,7 @@ type ServerPagination {
 "A spec for a given player class."
 type Spec {
     "The player class that the spec belongs to."
-    class: GameClass!
+    class: GameClass
     "An integer used to identify the spec."
     id: Int!
     "The localized name of the class."
@@ -1009,6 +1333,27 @@ type User {
     id: Int!
     "The name of the user."
     name: String!
+}
+
+"The user data object contains basic information about users and lets you retrieve specific users (or the current user if using the user endpoint)."
+type UserData {
+    "Obtain the current user (only works with user endpoint)."
+    currentUser: User
+    "Obtain a specific user by id."
+    user(
+        "Required. Specify a single user ID to retrieve."
+        id: Int
+    ): User
+}
+
+type ViewModels {
+    article(articleCategorySlug: String, articleSlug: String, siteName: String): JSON
+    articleCategories: JSON
+    articleSlugs(articleCategorySlug: String, siteName: String): JSON
+    game: JSON
+    googleAnalytics: JSON
+    headerTitle: JSON
+    snippets(snippetSlugs: [String]): JSON
 }
 
 "The world data object contains collections of data such as expansions, zones, encounters, regions, subregions, etc."
@@ -1060,8 +1405,8 @@ type WorldData {
 
 "A single zone from an expansion that represents a raid, dungeon, arena, etc."
 type Zone {
-    "The bracket information for this zone."
-    brackets: Bracket!
+    "The bracket information for this zone. This field will be null if the zone does not support brackets."
+    brackets: Bracket
     "A list of all the difficulties supported for this zone."
     difficulties: [Difficulty]
     "The encounters found within this zone."
@@ -1082,6 +1427,8 @@ type Zone {
 enum CharacterRankingMetricType {
     "Boss damage per second."
     bossdps
+    "Boss nDPS is unique to FFXIV and is damage done to the boss adjusted for raid-contributing buffs and debuffs."
+    bossndps
     "Boss rDPS is unique to FFXIV and is damage done to the boss adjusted for raid-contributing buffs and debuffs."
     bossrdps
     "Choose an appropriate default depending on the other selected parameters."
@@ -1091,15 +1438,21 @@ enum CharacterRankingMetricType {
     "Unique to FFXIV. Represents the combined ranking for a pair of healers in 8-man content."
     healercombinedbossdps
     "Unique to FFXIV. Represents the combined ranking for a pair of healers in 8-man content."
+    healercombinedbossndps
+    "Unique to FFXIV. Represents the combined ranking for a pair of healers in 8-man content."
     healercombinedbossrdps
     "Unique to FFXIV. Represents the combined ranking for a pair of healers in 8-man content."
     healercombineddps
+    "Unique to FFXIV. Represents the combined ranking for a pair of healers in 8-man content."
+    healercombinedndps
     "Unique to FFXIV. Represents the combined ranking for a pair of healers in 8-man content."
     healercombinedrdps
     "Healing per second."
     hps
     "Survivability ranking for tanks. Deprecated. Only supported for some older WoW zones."
     krsi
+    "nDPS is unique to FFXIV and is damage done adjusted for raid-contributing buffs and debuffs."
+    ndps
     "Score. Used by WoW Mythic dungeons and by ESO trials."
     playerscore
     "Speed. Not supported by every zone."
@@ -1109,9 +1462,13 @@ enum CharacterRankingMetricType {
     "Unique to FFXIV. Represents the combined ranking for a pair of tanks in 8-man content."
     tankcombinedbossdps
     "Unique to FFXIV. Represents the combined ranking for a pair of tanks in 8-man content."
+    tankcombinedbossndps
+    "Unique to FFXIV. Represents the combined ranking for a pair of tanks in 8-man content."
     tankcombinedbossrdps
     "Unique to FFXIV. Represents the combined ranking for a pair of tanks in 8-man content."
     tankcombineddps
+    "Unique to FFXIV. Represents the combined ranking for a pair of tanks in 8-man content."
+    tankcombinedndps
     "Unique to FFXIV. Represents the combined ranking for a pair of tanks in 8-man content."
     tankcombinedrdps
     "Healing done per second to tanks."
@@ -1160,6 +1517,8 @@ enum FightRankingMetricType {
     execution
     "Feats of strength in WoW or Challenges in FF."
     feats
+    "Progress metric, based off when the fight was defeated."
+    progress
     "For Mythic+ dungeons in WoW, represents the team's score. Used for ESO trials and dungeons also."
     score
     "Speed metric, based off the duration of the fight."
@@ -1317,6 +1676,5 @@ enum ViewType {
     "View by target."
     Target
 }
-
 
 scalar JSON

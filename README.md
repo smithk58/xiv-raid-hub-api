@@ -38,6 +38,6 @@ Put these values in a [`.env`](https://www.npmjs.com/package/dotenv) file or in 
 ### FFLogs GraphQL Stuff
 If you run into issues with FFLogs related queries the `schema.graphql` file may be outdated. The file is defined/maintained by FFLogs, so the one saved in this codebase could become outdated at any time.
 
-I use a plugin (JS Graph) to fetch it using the information in the `.graphqlconfig` file. If you do something similar you will first need to replace `<token>` in file with a valid token. Information on obtaining a token can be found in the FFlogs docs: https://www.fflogs.com/api/docs 
+I use a plugin (GraphQL) to fetch it using the information in the `.graphqlconfig` file. If you do something similar you will first need to replace `<token>` in file with a valid token. Information on obtaining a token can be found in the FFlogs docs: https://www.fflogs.com/api/docs 
 
 If you update the `schema.graphql` file be sure to run `npm run fflogs-types` to regenerate the typescript type definitions (`fflogs-types.d.ts`) as well.
