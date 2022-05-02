@@ -24,12 +24,12 @@ export class RaidGroupCharacter {
     order: number;
 
     @Type(() => Character)
-    @ManyToOne(type => Character, character => character.raidGroupCharacters, {primary: true, cascade: ['insert']})
+    @ManyToOne(type => Character, character => character.raidGroupCharacters, {cascade: ['insert']})
     @JoinColumn({name: 'characterId'})
     character: Character;
 
     @Exclude()
-    @ManyToOne(type => RaidGroup, raidGroup => raidGroup.characters, {primary: true})
+    @ManyToOne(type => RaidGroup, raidGroup => raidGroup.characters)
     @JoinColumn({name: 'raidGroupId'})
     raidGroup: RaidGroup;
 

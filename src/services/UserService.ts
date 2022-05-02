@@ -37,12 +37,10 @@ export class UserService {
      * @param userId - The ID of the user to retrieve.
      */
     public async getUser(userId: number): Promise<User> {
-        return getConnection().getRepository(User).findOne({id: userId});
+        return getConnection().getRepository(User).findOne({where: {id: userId}});
     }
     public async getUserByDiscordId(discordId: string): Promise<User> {
-        return getConnection().getRepository(User).findOne( {
-            discordId
-        });
+        return getConnection().getRepository(User).findOne( {where: {discordId}});
     }
     /**
      * Creates a user from the specified discord user.
