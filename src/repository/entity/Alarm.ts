@@ -1,70 +1,56 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { IsEnum, IsIn, IsInt, Max, Min, validateOrReject } from 'class-validator';
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { IsIn, IsInt, Max, Min, validateOrReject } from 'class-validator';
 import { Exclude } from 'class-transformer';
 
-import { RaidGroup } from './RaidGroup';
-import { User } from './User';
+import { AlarmDefinition } from './AlarmDefinition';
+import { WeeklyRaidTime } from './WeeklyRaidTime';
 
-export enum AlarmType {
-    USER = 'user',
-    CHANNEL = 'channel'
-}
-
-@Unique('unique_alarm', ['raidGroupId', 'targetId', 'type', 'offsetHour'])
+@Index(['utcHour', 'utcMinute'])
 @Entity({name: 'raid_group_alarms'})
 export class Alarm {
+    // All parameters must remain optional for TypeORM.
+    constructor(alarmDefId: number, weeklyRaidTimeId?: number, utcHour?: number, utcMinute?: number, utcWeekMask?: number) {
+        this.alarmDefinitionId = alarmDefId;
+        this.weeklyRaidTimeId = weeklyRaidTimeId;
+        this.utcHour = utcHour;
+        this.utcMinute = utcMinute;
+        this.utcWeekMask = utcWeekMask;
+    }
     @PrimaryGeneratedColumn()
     id: number;
 
-    @IsEnum(AlarmType)
-    @Column({
-        type: 'enum',
-        enum: AlarmType
-    })
-    type: AlarmType;
-
-    @Column({length: 64}) // snowflake
-    targetGuildId: string;
-
-    @Column({length: 64}) // snowflake
-    targetId: string;
-
-    @Exclude()
-    @Column({length: 100, nullable: true})
-    targetName: string;
-
-    @Column({length: 64, nullable: true})
-    targetRoleId: string;
-
-    @Column({length: 100, nullable: true})
-    targetRoleName: string;
+    @IsInt()
+    @Min(0)
+    @Max(23)
+    @Column()
+    utcHour: number;
 
     @IsInt()
     @Min(0)
-    @Max(24)
+    @Max(59)
+    @IsIn([0, 15, 30, 45], {message: 'Minutes must be 0, 15, 30, or 45.'})
     @Column()
-    offsetHour: number;
+    utcMinute: number;
 
-    @Index()
+    @IsInt()
     @Column()
-    isEnabled: boolean;
+    utcWeekMask: number;
+
+    @Column({name: 'weeklyRaidTimeId'})
+    weeklyRaidTimeId: number;
 
     @Exclude()
-    @Column({name: 'ownerId'})
-    ownerId: number;
+    @ManyToOne(type => WeeklyRaidTime, wrt => wrt.alarms, {onDelete: 'CASCADE'})
+    @JoinColumn({name: 'weeklyRaidTimeId'})
+    weeklyRaidTime: WeeklyRaidTime;
+
+    @Column({name: 'alarmDefinitionId'})
+    alarmDefinitionId: number;
 
     @Exclude()
-    @ManyToOne(type => User, user => user.raidGroupAlarms, {nullable: false})
-    @JoinColumn({name: 'ownerId'})
-    owner: User;
-
-    @Column({name: 'raidGroupId'})
-    raidGroupId: number;
-
-    @Exclude()
-    @ManyToOne(type => RaidGroup, raidGroup => raidGroup.alarms, {nullable: false})
-    @JoinColumn({name: 'raidGroupId'})
-    raidGroup: RaidGroup;
+    @ManyToOne(type => AlarmDefinition, alarmDef => alarmDef.alarms, {nullable: false, onDelete: 'CASCADE'})
+    @JoinColumn({name: 'alarmDefinitionId'})
+    alarmDefinition: AlarmDefinition;
 
     @BeforeInsert()
     @BeforeUpdate()

@@ -8,8 +8,12 @@ import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
 import { RaidGroup } from '../repository/entity/RaidGroup';
 import { UserService } from '../services/UserService';
 import { RaidGroupService } from '../services/RaidGroupService';
+import { RaidTimeService } from '../services/RaidTimeService';
+import { AlarmService } from '../services/AlarmService';
 
 const raidGroupService: RaidGroupService = Container.get(RaidGroupService);
+const raidTimeService: RaidTimeService = Container.get(RaidTimeService);
+const alarmsService: AlarmService = Container.get(AlarmService);
 const userService: UserService = Container.get(UserService);
 
 export type RContext = ParameterizedContext<DefaultState, Context & Router.RouterParamContext<DefaultState, Context>>;
@@ -80,7 +84,7 @@ raidGroupRouter.delete('/:id', async (ctx: RContext) => {
 });
 raidGroupRouter.get('/:id/raid-times', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
-    const res = await raidGroupService.getWeeklyRaidTimes(ctx.session.user.id, raidGroupId);
+    const res = await alarmsService.getWeeklyRaidTimes(ctx.session.user.id, raidGroupId);
     if (res) {
         ctx.ok(res);
     } else {
@@ -90,7 +94,7 @@ raidGroupRouter.get('/:id/raid-times', async (ctx: RContext) => {
 raidGroupRouter.put('/:id/raid-times', async (ctx: RContext) => {
     const raidGroupId = parseInt(ctx.params.id, 10);
     const raidTimes: WeeklyRaidTime[] = plainToClass<WeeklyRaidTime, WeeklyRaidTime>(WeeklyRaidTime, ctx.request.body);
-    const res = await raidGroupService.updateWeeklyRaidTimes(ctx.session.user.id, raidGroupId, raidTimes);
+    const res = await raidTimeService.updateWeeklyRaidTimes(ctx.session.user.id, raidGroupId, raidTimes);
     if (res) {
         ctx.ok(res);
     } else {

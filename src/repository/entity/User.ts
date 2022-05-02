@@ -4,7 +4,7 @@ import { Exclude } from 'class-transformer';
 
 import { RaidGroup } from './RaidGroup';
 import { UserCharacter } from './UserCharacter';
-import { Alarm } from './Alarm';
+import { AlarmDefinition } from './AlarmDefinition';
 import { UserSetting } from './UserSetting';
 
 @Entity({name: 'users'})
@@ -39,8 +39,8 @@ export class User {
     raidGroups: RaidGroup[];
 
     @Exclude()
-    @OneToMany(type => Alarm, alarm => alarm.owner)
-    raidGroupAlarms: Alarm[];
+    @OneToMany(type => AlarmDefinition, alarm => alarm.owner)
+    raidGroupAlarms: AlarmDefinition[];
 
     @Exclude()
     @OneToMany(type => UserSetting, setting => setting.user)

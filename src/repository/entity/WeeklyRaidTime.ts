@@ -1,20 +1,21 @@
 import { IsIn, IsInt, Max, Min, validateOrReject } from 'class-validator';
-import { BeforeInsert, BeforeUpdate, Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
 import { RaidGroup } from './RaidGroup';
+import { Alarm } from './Alarm';
 
 @Index(['raidGroupId', 'utcHour'])
 @Entity({name: 'weekly_raid_times'})
 export class WeeklyRaidTime {
     @PrimaryGeneratedColumn()
-    id: number;
+    id?: number;
 
     @Column()
     raidGroupId: number;
 
     @Exclude()
-    @ManyToOne(type => RaidGroup, raidGroup => raidGroup.weeklyRaidTimes, {nullable: false})
+    @ManyToOne(type => RaidGroup, raidGroup => raidGroup.weeklyRaidTimes, {nullable: false, onDelete: 'CASCADE'})
     @JoinColumn({name: 'raidGroupId'})
     raidGroup: RaidGroup;
 
@@ -34,6 +35,14 @@ export class WeeklyRaidTime {
     @IsIn([0, 15, 30, 45], {message: 'Minutes must be 0, 15, 30, or 45.'})
     @Column()
     utcMinute: number;
+
+    @IsInt()
+    @Column()
+    utcTimezoneOffset: number;
+
+    @Exclude()
+    @OneToMany(type => Alarm, alarm => alarm.weeklyRaidTime, {onDelete: 'CASCADE'})
+    alarms: Alarm[];
 
     @BeforeInsert()
     @BeforeUpdate()

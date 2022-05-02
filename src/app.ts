@@ -8,7 +8,7 @@ import 'reflect-metadata'; // required for class-transformer and typeorm
 const respond = require('koa-respond');
 const grant = require('grant').koa();
 import apiRouter from './routes';
-import { createConnection } from 'typeorm';
+import { createConnection, DataSource } from 'typeorm';
 import { checkOriginAgainstWhitelist } from './utils/middleware/origin-whitelist';
 import { handleError } from './utils/middleware/error-handler';
 import { Container } from 'typescript-ioc';
@@ -60,14 +60,13 @@ app.use(respond());
 
 // Create connection to DB
 createConnection().then(() => {
-   console.log('DB connection successful');
+    console.log('DB connection successful');
+    // Routes
+    app.use(apiRouter.routes());
+    app.use(apiRouter.allowedMethods());
 }, (err) => {
     console.log('DB connection failed', err);
 });
-
-// Routes
-app.use(apiRouter.routes());
-app.use(apiRouter.allowedMethods());
 
 // Application error logging.
 app.on('error', console.error);

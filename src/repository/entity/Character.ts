@@ -16,11 +16,11 @@ export class Character {
     @Column({length: 30})
     server: string;
 
-    defaultClass: string;
-
     @Exclude()
     @ManyToMany(type => RaidGroup)
     raidGroupCharacters?: RaidGroupCharacter[];
+
+    defaultClass: string; // Used to popular UserCharacter when users insert characters
 
     @BeforeInsert()
     @BeforeUpdate()

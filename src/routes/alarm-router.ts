@@ -6,7 +6,7 @@ import { plainToClass } from 'class-transformer';
 import { RContext } from './character-router';
 import { UserService } from '../services/UserService';
 import { AlarmService } from '../services/AlarmService';
-import { Alarm } from '../repository/entity/Alarm';
+import { AlarmDefinition } from '../repository/entity/AlarmDefinition';
 
 const routerOpts: Router.RouterOptions = {prefix: '/alarms'};
 const alarmRouter: Router = new Router<DefaultState, Context>(routerOpts);
@@ -21,13 +21,13 @@ alarmRouter.use(async (ctx: RContext, next) => {
 });
 
 alarmRouter.get('/', async (ctx: RContext) => {
-    const alarms = await alarmService.getAlarms(ctx.session.user.id);
+    const alarms = await alarmService.getAlarmDefinitions(ctx.session.user.id);
     ctx.ok(alarms);
 });
 alarmRouter.post('/', async (ctx: RContext) => {
-    const alarm: Alarm = plainToClass(Alarm, ctx.request.body);
+    const alarm: AlarmDefinition = plainToClass(AlarmDefinition, ctx.request.body);
     const token = ctx.session.discordGrant.response.access_token;
-    const res = await alarmService.createAlarm(alarm, ctx.session.user.id, ctx.session.user.discordId, token);
+    const res = await alarmService.createAlarmDefinition(alarm, ctx.session.user.id, ctx.session.user.discordId, token);
     if (res) {
         ctx.ok(res);
     } else {
@@ -35,10 +35,10 @@ alarmRouter.post('/', async (ctx: RContext) => {
     }
 });
 alarmRouter.put('/:id', async (ctx: RContext) => {
-    const alarm: Alarm = plainToClass(Alarm, ctx.request.body);
+    const alarm: AlarmDefinition = plainToClass(AlarmDefinition, ctx.request.body);
     alarm.id = parseInt(ctx.params.id, 10);
     const token = ctx.session.discordGrant.response.access_token;
-    const res = await alarmService.updateAlarm(alarm, ctx.session.user.id, ctx.session.user.discordId, token);
+    const res = await alarmService.updateAlarmDefinition(alarm, ctx.session.user.id, ctx.session.user.discordId, token);
     if (res) {
         ctx.ok(res);
     } else {
@@ -47,7 +47,7 @@ alarmRouter.put('/:id', async (ctx: RContext) => {
 });
 alarmRouter.delete('/:id', async (ctx: RContext) => {
     const alarmId = parseInt(ctx.params.id, 10);
-    const res = await alarmService.deleteAlarm(ctx.session.user.id, alarmId);
+    const res = await alarmService.deleteAlarmDefinition(ctx.session.user.id, alarmId);
     if (res) {
         ctx.ok(res);
     } else {

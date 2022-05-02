@@ -5,7 +5,7 @@ import { Exclude, Type } from 'class-transformer';
 import { RaidGroupCharacter } from './RaidGroupCharacter';
 import { User } from './User';
 import { WeeklyRaidTime } from './WeeklyRaidTime';
-import { Alarm } from './Alarm';
+import { AlarmDefinition } from './AlarmDefinition';
 
 @Entity({name: 'raid_groups'})
 export class RaidGroup {
@@ -16,7 +16,7 @@ export class RaidGroup {
     name: string;
 
     @IsOptional()
-    @Column({length: 10, nullable: true})
+    @Column({length: 12, nullable: true})
     purpose: string;
 
     @Column({default: false})
@@ -44,12 +44,12 @@ export class RaidGroup {
     characters: RaidGroupCharacter[];
 
     @Exclude()
-    @OneToMany(type => WeeklyRaidTime, raidTime => raidTime.raidGroup, {cascade: ['remove']})
+    @OneToMany(type => WeeklyRaidTime, raidTime => raidTime.raidGroup, {onDelete: 'CASCADE'})
     weeklyRaidTimes: WeeklyRaidTime[];
 
     @Exclude()
-    @OneToMany(type => Alarm, alarm => alarm.raidGroup)
-    alarms: Alarm[];
+    @OneToMany(type => AlarmDefinition, alarm => alarm.raidGroup)
+    alarms: AlarmDefinition[];
 
     isEqualCharacters(comparisonCharacters: RaidGroupCharacter[]): boolean {
         // Check if the arrays are both defined and of equal length
