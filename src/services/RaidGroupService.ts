@@ -1,5 +1,4 @@
 import { DeleteResult, EntityManager, getConnection, getManager } from 'typeorm';
-import { validateOrReject } from 'class-validator';
 import { Inject, Singleton } from 'typescript-ioc';
 
 import { RaidGroup } from '../repository/entity/RaidGroup';
@@ -24,7 +23,7 @@ export class RaidGroupService {
         return getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
-            .innerJoin('group.characters', 'characters')
+            .leftJoin('group.characters', 'characters')
             .leftJoin('user_characters', 'character', 'characters."characterId" = character."characterId"')
             .where('"group"."ownerId" = :userId', {userId})
             .orWhere('(group.share = true AND (character."userId" = :userId AND "isOwner" = true))', {userId})
@@ -49,11 +48,11 @@ export class RaidGroupService {
         const raidGroup = await getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
-            .innerJoin('group.characters', 'raidcharacter')
-            .innerJoin('raidcharacter.character', 'character')
+            .leftJoin('group.characters', 'characters')
+            .leftJoin('characters.character', 'character')
             .where('"group"."id" = :raidGroupId', {raidGroupId})
-            .select(['group', 'raidcharacter', 'character'])
-            .orderBy('raidcharacter.order')
+            .select(['group', 'characters', 'character'])
+            .orderBy('characters.order')
             .getOne();
         // TODO do this via addSelectAndMap when typeorm releases in 0.3.0
         if (raidGroup) {
@@ -68,12 +67,18 @@ export class RaidGroupService {
      */
     public async createRaidGroup(userId: number, raidGroup: RaidGroup): Promise<RaidGroup> {
         delete raidGroup.id;
-        // TODO Validate characters in raid group are unique
-        // Have to call validateOrReject ourselves, since changes in length of characters[] don't trigger @BeforeInsert() or @BeforeUpdate()
-        await validateOrReject(raidGroup, {validationError: {target: false}});
-        // Confirm the characters all allow people to add them to raid groups
-        const newCharacterIds = raidGroup.characters.map((rgChar) => rgChar.character ? rgChar.character.id : rgChar.characterId);
-        await this.raidGroupSecurity.canAddCharacters(userId, newCharacterIds, raidGroup.characters);
+        // Validate characters if we're including any on the raid group
+        if (raidGroup.hasCharacters) {
+            if (!raidGroup.characters || raidGroup.characters.length < 8) {
+                return Promise.reject('Must have 8 characters in a raid group');
+            }
+            // Confirm the characters all allow people to add them to raid groups
+            const newCharacterIds = raidGroup.characters.map((rgChar) => rgChar.character ? rgChar.character.id : rgChar.characterId);
+            await this.raidGroupSecurity.canAddCharacters(userId, newCharacterIds, raidGroup.characters);
+        } else {
+            raidGroup.share = false;
+            raidGroup.characters = []
+        }
         // Assign current user as owner of the new raid group
         raidGroup.owner = await this.userService.getUser(userId);
         raidGroup.isOwner = true;
@@ -107,13 +112,19 @@ export class RaidGroupService {
         if (!canEdit) {
             return Promise.resolve(null);
         }
-        // Have to call validateOrReject ourselves, since changes in length of characters[] don't trigger @BeforeInsert() or @BeforeUpdate()
-        await validateOrReject(raidGroup, {validationError: {target: false}});
         const existingRaidGroup = await this.getRaidGroupWithCharacters(userId, raidGroup.id);
-        // Check if they've added a new character, if so we have to confirm they haven't disallowed being added to raid groups
-        const newCharacterIds = existingRaidGroup.getNewCharacterIds(raidGroup.characters);
-        if (newCharacterIds.length > 0) {
-            await this.raidGroupSecurity.canAddCharacters(userId, newCharacterIds, raidGroup.characters);
+        if (raidGroup.hasCharacters) {
+            if (!raidGroup.characters || raidGroup.characters.length < 8) {
+                return Promise.reject('Must have 8 characters in a raid group');
+            }
+            // Check if they've added a new character, if so we have to confirm they haven't disallowed being added to raid groups
+            const newCharacterIds = existingRaidGroup.getNewCharacterIds(raidGroup.characters);
+            if (newCharacterIds.length > 0) {
+                await this.raidGroupSecurity.canAddCharacters(userId, newCharacterIds, raidGroup.characters);
+            }
+        } else {
+            raidGroup.share = false;
+            raidGroup.characters = [];
         }
         // Check if they've made any changes to the raid group characters
         const charactersModified = !existingRaidGroup.isEqualCharacters(raidGroup.characters);

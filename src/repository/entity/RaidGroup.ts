@@ -1,5 +1,5 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { ArrayMaxSize, ArrayMinSize, IsOptional } from 'class-validator';
+import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsOptional, validateOrReject } from 'class-validator';
 import { Exclude, Type } from 'class-transformer';
 
 import { RaidGroupCharacter } from './RaidGroupCharacter';
@@ -19,9 +19,15 @@ export class RaidGroup {
     @Column({length: 12, nullable: true})
     purpose: string;
 
+    @Exclude()
     @Column({default: false})
     hasSchedule: boolean;
 
+    @IsBoolean()
+    @Column({default: true})
+    hasCharacters: boolean;
+
+    @IsBoolean()
     @Column()
     share: boolean;
 
@@ -37,8 +43,6 @@ export class RaidGroup {
     @JoinColumn({name: 'ownerId'})
     owner: User;
 
-    @ArrayMinSize(8, {message: 'Must have 8 characters in a raid group.'})
-    @ArrayMaxSize(8, {message: 'Must have 8 characters in a raid group.'})
     @Type(() => RaidGroupCharacter)
     @OneToMany(type => RaidGroupCharacter, character => character.raidGroup, {cascade: true})
     characters: RaidGroupCharacter[];
@@ -50,6 +54,12 @@ export class RaidGroup {
     @Exclude()
     @OneToMany(type => AlarmDefinition, alarm => alarm.raidGroup)
     alarms: AlarmDefinition[];
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    private validate(): Promise<void> {
+        return validateOrReject(this, {validationError: {target: false}});
+    }
 
     isEqualCharacters(comparisonCharacters: RaidGroupCharacter[]): boolean {
         // Check if the arrays are both defined and of equal length

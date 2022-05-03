@@ -22,7 +22,7 @@ export class RaidGroupSecurityService {
         return await getConnection()
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
-            .innerJoin('group.characters', 'characters')
+            .leftJoin('group.characters', 'characters')
             .leftJoin('user_characters', 'character', 'characters."characterId" = character."characterId"')
             .where('id = :id AND "ownerId" = :ownerId', {id: raidGroupId, ownerId: userId})
             .orWhere('(group.share = true AND (character."userId" = :userId AND "isOwner" = true))', {userId})
