@@ -1,4 +1,4 @@
-import { getConnection, getManager } from 'typeorm';
+import { getConnection } from 'typeorm';
 import { Inject, Singleton } from 'typescript-ioc';
 
 import { RaidGroup } from '../repository/entity/RaidGroup';
@@ -59,8 +59,8 @@ export class RaidGroupSecurityService {
                 names.push(targetCharacter.character.name);
             }
             throw new ValidationError(
-                // tslint:disable-next-line:max-line-length
-                'The owners of the following characters have disabled allowing other players to add their characters to raid groups: ' + names.join(', ')
+                'The owners of the following characters have disabled allowing other players to add their ' +
+                'characters to raid groups: ' + names.join(', ')
             );
         }
     }

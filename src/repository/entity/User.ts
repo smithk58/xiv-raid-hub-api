@@ -31,19 +31,19 @@ export class User {
     lastLogin: Date;
 
     @Exclude()
-    @OneToMany(type => UserCharacter, userCharacter => userCharacter.user)
+    @OneToMany(() => UserCharacter, userCharacter => userCharacter.user)
     characters: UserCharacter[];
 
     @Exclude()
-    @OneToMany(type => RaidGroup, raidGroup => raidGroup.owner)
+    @OneToMany(() => RaidGroup, raidGroup => raidGroup.owner)
     raidGroups: RaidGroup[];
 
     @Exclude()
-    @OneToMany(type => AlarmDefinition, alarm => alarm.owner)
+    @OneToMany(() => AlarmDefinition, alarm => alarm.owner)
     raidGroupAlarms: AlarmDefinition[];
 
     @Exclude()
-    @OneToMany(type => UserSetting, setting => setting.user)
+    @OneToMany(() => UserSetting, setting => setting.user)
     settings: UserSetting[];
 
     @BeforeInsert()

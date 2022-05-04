@@ -57,7 +57,7 @@ export class CharacterService {
             .select(['uc', 'character'])
             .getOne();
         if (!existingCharacter) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as UserCharacter);
         }
         // A non owner can only update the default class they have assigned
         existingCharacter.defaultClass = character.defaultClass;
@@ -95,9 +95,9 @@ export class CharacterService {
             .where('uc."characterId" = :characterId AND uc."userId" = :userId', {userId, characterId})
             .getOne();
         if (!character) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as boolean);
         }
-        const result = await this.checkLodestoneProfileForString(characterId, 'xiv-raid-hub-' + userId);
+        const result = await this.checkLodestoneProfileForString(characterId, 'xiv-raid-hub-' + String(userId));
         if (result) {
             await getConnection()
                 .createQueryBuilder()
@@ -150,7 +150,8 @@ export class CharacterService {
      */
     private async getStringsFromLodestone(characterId: number, domSelectors: string[]): Promise<Record<string, string>> {
         return new Promise((resolve, reject) => {
-            const req = https.get('https://na.finalfantasyxiv.com/lodestone/character/' + characterId, (response: IncomingMessage) => {
+            const charIdStr = String(characterId);
+            const req = https.get('https://na.finalfantasyxiv.com/lodestone/character/' + charIdStr, (response: IncomingMessage) => {
                 // Build the response
                 let data = '';
                 response.on('data', (chunk) => {

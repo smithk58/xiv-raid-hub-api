@@ -1,4 +1,10 @@
 export class User {
+    id: number;
+    discordId: string;
+    username: string;
+    avatarURL: string;
+    timezone?: string;
+
     constructor(id: number, discordId: string, username: string, avatarURL: string, timezone?: string) {
         this.id = id;
         this.discordId = discordId;
@@ -6,9 +12,4 @@ export class User {
         this.avatarURL = avatarURL;
         this.timezone = timezone;
     }
-    id: number;
-    discordId: string;
-    username: string;
-    avatarURL: string;
-    timezone?: string;
 }

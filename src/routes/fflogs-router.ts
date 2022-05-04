@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as Router from '@koa/router';
 import { Context, DefaultState } from 'koa';
 import { Container } from 'typescript-ioc';
@@ -18,7 +19,7 @@ fflogsRouter.use(async (ctx: RContext, next) => {
     return next();
 });
 fflogsRouter.get('/classes', async (ctx: RContext) => {
-    const classes = await ffLogsApi.getClasses();
+    const classes = ffLogsApi.getClasses();
     ctx.ok(classes);
 });
 fflogsRouter.get('/regions', async (ctx: RContext) => {

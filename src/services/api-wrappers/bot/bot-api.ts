@@ -11,28 +11,28 @@ export class BotApi {
     public async getGuilds(): Promise<Record<string, SimpleGuild>> {
         const url = this.createUrl('/guilds');
         const response = await fetch(url);
-        return this.handleResponse(response);
+        return this.handleResponse<Record<string, SimpleGuild>>(response);
     }
     public async getGuildChannels(guildId: string): Promise<IdNamePair[]> {
         const url = this.createUrl('/guilds/' + guildId + '/channels');
         const response = await fetch(url);
-        return this.handleResponse(response);
+        return this.handleResponse<IdNamePair[]>(response);
     }
     public async getGuildRoles(guildId: string): Promise<IdNamePair[]> {
         const url = this.createUrl('/guilds/' + guildId + '/roles');
         const response = await fetch(url);
-        return this.handleResponse(response);
+        return this.handleResponse<IdNamePair[]>(response);
     }
     public async getGuildDetail(guildId: string): Promise<SimpleGuild> {
         const url = this.createUrl('/guilds/' + guildId);
         const response = await fetch(url);
-        return this.handleResponse(response);
+        return this.handleResponse<SimpleGuild>(response);
     }
-    private async handleResponse(response: Response) {
+    private handleResponse<T>(response: Response) {
         if (response.status !== 200) {
             return Promise.reject(response);
         }
-        return response.json();
+        return response.json() as Promise<T>;
     }
     /**
      * Creates a URL using the provided relative path with the xiv-apis base URL and API key taken care of.

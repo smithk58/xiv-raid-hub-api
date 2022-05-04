@@ -8,14 +8,6 @@ import { WeeklyRaidTime } from './WeeklyRaidTime';
 @Index(['utcHour', 'utcMinute'])
 @Entity({name: 'raid_group_alarms'})
 export class Alarm {
-    // All parameters must remain optional for TypeORM.
-    constructor(alarmDefId: number, weeklyRaidTimeId?: number, utcHour?: number, utcMinute?: number, utcWeekMask?: number) {
-        this.alarmDefinitionId = alarmDefId;
-        this.weeklyRaidTimeId = weeklyRaidTimeId;
-        this.utcHour = utcHour;
-        this.utcMinute = utcMinute;
-        this.utcWeekMask = utcWeekMask;
-    }
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -40,7 +32,7 @@ export class Alarm {
     weeklyRaidTimeId: number;
 
     @Exclude()
-    @ManyToOne(type => WeeklyRaidTime, wrt => wrt.alarms, {onDelete: 'CASCADE'})
+    @ManyToOne(() => WeeklyRaidTime, wrt => wrt.alarms, {onDelete: 'CASCADE'})
     @JoinColumn({name: 'weeklyRaidTimeId'})
     weeklyRaidTime: WeeklyRaidTime;
 
@@ -48,9 +40,18 @@ export class Alarm {
     alarmDefinitionId: number;
 
     @Exclude()
-    @ManyToOne(type => AlarmDefinition, alarmDef => alarmDef.alarms, {nullable: false, onDelete: 'CASCADE'})
+    @ManyToOne(() => AlarmDefinition, alarmDef => alarmDef.alarms, {nullable: false, onDelete: 'CASCADE'})
     @JoinColumn({name: 'alarmDefinitionId'})
     alarmDefinition: AlarmDefinition;
+
+    // All parameters must remain optional for TypeORM.
+    constructor(alarmDefId: number, weeklyRaidTimeId?: number, utcHour?: number, utcMinute?: number, utcWeekMask?: number) {
+        this.alarmDefinitionId = alarmDefId;
+        this.weeklyRaidTimeId = weeklyRaidTimeId;
+        this.utcHour = utcHour;
+        this.utcMinute = utcMinute;
+        this.utcWeekMask = utcWeekMask;
+    }
 
     @BeforeInsert()
     @BeforeUpdate()

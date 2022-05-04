@@ -16,8 +16,10 @@ export class APIKeyService {
         const apiKeyMap = await this.getAPIKeyMap();
         const isValid = typeof(apiKeyMap[apiKey]) !== 'undefined';
         if (!isValid) {
+            /* eslint-disable */
             ctx.unauthorized();
             ctx.res.end();
+            /* eslint-enable */
         }
     }
     public async getAPIKeyMap(): Promise<Record<string, APIAccess>> {

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { RContext } from './raid-group-router';
 import * as Router from '@koa/router';
 import { Context, DefaultState } from 'koa';

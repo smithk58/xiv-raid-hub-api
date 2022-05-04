@@ -4,11 +4,6 @@ import { User } from './User';
 
 @Entity({name: 'user_settings'})
 export class UserSetting {
-    constructor(userId: number, key: string, value: string) {
-        this.userId = userId;
-        this.key = key;
-        this.value = value;
-    }
     @PrimaryColumn()
     userId: number;
 
@@ -19,7 +14,13 @@ export class UserSetting {
     value: string;
 
     @Exclude()
-    @ManyToOne(type => User, user => user.settings, {nullable: false})
+    @ManyToOne(() => User, user => user.settings, {nullable: false})
     @JoinColumn({name: 'userId'})
     user: User;
+
+    constructor(userId: number, key: string, value: string) {
+        this.userId = userId;
+        this.key = key;
+        this.value = value;
+    }
 }

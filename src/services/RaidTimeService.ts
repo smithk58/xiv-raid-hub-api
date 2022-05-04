@@ -57,7 +57,7 @@ export class RaidTimeService {
         // Ensure the raid group exists and they can edit it before continuing
         const canEdit = await this.raidGroupSecurity.canEditRaidGroup(userId, raidGroupId);
         if (!canEdit) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as WeeklyRaidTime[]);
         }
         // Ensure raid group IDs on raid times match the one provided in the URL
         for (const raidTime of raidTimes) {

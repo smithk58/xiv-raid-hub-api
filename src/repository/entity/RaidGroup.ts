@@ -1,5 +1,5 @@
 import { BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsOptional, validateOrReject } from 'class-validator';
+import { IsBoolean, IsOptional, validateOrReject } from 'class-validator';
 import { Exclude, Type } from 'class-transformer';
 
 import { RaidGroupCharacter } from './RaidGroupCharacter';
@@ -39,20 +39,20 @@ export class RaidGroup {
     ownerId: number;
 
     @Exclude()
-    @ManyToOne(type => User, user => user.raidGroups, {nullable: false})
+    @ManyToOne(() => User, user => user.raidGroups, {nullable: false})
     @JoinColumn({name: 'ownerId'})
     owner: User;
 
     @Type(() => RaidGroupCharacter)
-    @OneToMany(type => RaidGroupCharacter, character => character.raidGroup, {cascade: true})
+    @OneToMany(() => RaidGroupCharacter, character => character.raidGroup, {cascade: true})
     characters: RaidGroupCharacter[];
 
     @Exclude()
-    @OneToMany(type => WeeklyRaidTime, raidTime => raidTime.raidGroup, {onDelete: 'CASCADE'})
+    @OneToMany(() => WeeklyRaidTime, raidTime => raidTime.raidGroup, {onDelete: 'CASCADE'})
     weeklyRaidTimes: WeeklyRaidTime[];
 
     @Exclude()
-    @OneToMany(type => AlarmDefinition, alarm => alarm.raidGroup)
+    @OneToMany(() => AlarmDefinition, alarm => alarm.raidGroup)
     alarms: AlarmDefinition[];
 
     @BeforeInsert()

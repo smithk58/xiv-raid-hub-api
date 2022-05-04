@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as Router from '@koa/router';
 import { Context, DefaultState } from 'koa';
 import { Container } from 'typescript-ioc';

@@ -21,12 +21,12 @@ export class UserCharacter {
     defaultClass: string;
 
     @Type(() => Character)
-    @ManyToOne(type => Character, character => character.raidGroupCharacters, {cascade: ['insert', 'update']})
+    @ManyToOne(() => Character, character => character.raidGroupCharacters, {cascade: ['insert', 'update']})
     @JoinColumn({name: 'characterId'})
     character: Character;
 
     @Type(() => User)
-    @ManyToOne(type => User, user => user.characters)
+    @ManyToOne(() => User, user => user.characters)
     @JoinColumn({name: 'userId'})
     user: User;
 

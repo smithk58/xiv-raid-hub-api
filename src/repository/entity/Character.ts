@@ -17,7 +17,7 @@ export class Character {
     server: string;
 
     @Exclude()
-    @ManyToMany(type => RaidGroup)
+    @ManyToMany(() => RaidGroup)
     raidGroupCharacters?: RaidGroupCharacter[];
 
     defaultClass: string; // Used to popular UserCharacter when users insert characters

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as Koa from 'koa';
 import * as Helmet from 'koa-helmet';
 import * as Logger from 'koa-logger';
@@ -8,7 +9,7 @@ import 'reflect-metadata'; // required for class-transformer and typeorm
 const respond = require('koa-respond');
 const grant = require('grant').koa();
 import apiRouter from './routes';
-import { createConnection, DataSource } from 'typeorm';
+import { createConnection } from 'typeorm';
 import { checkOriginAgainstWhitelist } from './utils/middleware/origin-whitelist';
 import { handleError } from './utils/middleware/error-handler';
 import { Container } from 'typescript-ioc';

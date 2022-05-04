@@ -33,6 +33,8 @@ export class EnvService {
         return process.env.FFLOGS_SECRET;
     }
     public get allowedOrigins() {
-        return process.env.ALLOWED_ORIGINS ? JSON.parse(process.env.ALLOWED_ORIGINS) : ['https://www.xivraidhub.com', 'https://bot.xivraidhub.com'];
+        return process.env.ALLOWED_ORIGINS ?
+            JSON.parse(process.env.ALLOWED_ORIGINS) as string[] :
+            ['https://www.xivraidhub.com', 'https://bot.xivraidhub.com'];
     }
 }

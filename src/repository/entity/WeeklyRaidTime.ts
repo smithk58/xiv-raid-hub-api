@@ -15,7 +15,7 @@ export class WeeklyRaidTime {
     raidGroupId: number;
 
     @Exclude()
-    @ManyToOne(type => RaidGroup, raidGroup => raidGroup.weeklyRaidTimes, {nullable: false, onDelete: 'CASCADE'})
+    @ManyToOne(() => RaidGroup, raidGroup => raidGroup.weeklyRaidTimes, {nullable: false, onDelete: 'CASCADE'})
     @JoinColumn({name: 'raidGroupId'})
     raidGroup: RaidGroup;
 
@@ -41,7 +41,7 @@ export class WeeklyRaidTime {
     utcTimezoneOffset: number;
 
     @Exclude()
-    @OneToMany(type => Alarm, alarm => alarm.weeklyRaidTime, {onDelete: 'CASCADE'})
+    @OneToMany(() => Alarm, alarm => alarm.weeklyRaidTime, {onDelete: 'CASCADE'})
     alarms: Alarm[];
 
     @BeforeInsert()

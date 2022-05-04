@@ -60,23 +60,6 @@ export class UserService {
         return getConnection().getRepository(User).save(user);
     }
 
-    /**
-     * Updates properties on the user that should be checked/updated on every login.
-     * @param user - The user to update.
-     * @param discordUser - The discord user to use as a source for update values.
-     * @param timezone - The users timezone.
-     */
-    private async onLoginUpdate(user: User, discordUser: DiscordUser, timezone: string): Promise<User> {
-        const userRepository = getConnection().getRepository(User);
-        // Update username/email from discord and last login
-        user.username = discordUser.username;
-        user.email = discordUser.email;
-        if (this.isValidTimezone(timezone)) {
-            user.timezone = timezone;
-        }
-        user.lastLogin = new Date();
-        return userRepository.save(user);
-    }
     public async getSettings(userId: number) {
         const settings = await getConnection()
             .getRepository(UserSetting)
@@ -91,31 +74,24 @@ export class UserService {
     }
     public async updateSettings(userId: number, settings: Record<string, PropertyValue>) {
         this.propertyService.validatePropertyValues(this.properties, settings);
-        Object.keys(settings).forEach((key) => {
+        const keysToDelete: string[] = [];
+        const newSettings: UserSetting[] =  [];
+        for (const key of Object.keys(settings)) {
             const property = this.properties[key];
             const value = settings[key];
             // Delete properties that are being set to default, insert/update others
-            const keysToDelete: string[] = [];
-            const newSettings: UserSetting[] =  [];
             if (property.isDefault(value)) {
                 keysToDelete.push(key);
             } else {
                 newSettings.push(new UserSetting(userId, key, property.valueToString(value)));
             }
-            return getManager().transaction(async (entityManager: EntityManager) => {
-                if (keysToDelete.length > 0) {
-                    await this.deleteSettings(entityManager, userId, keysToDelete);
-                }
-                return await entityManager.getRepository(UserSetting).save(newSettings);
-            });
+        }
+        return getManager().transaction(async (entityManager: EntityManager) => {
+            if (keysToDelete.length > 0) {
+                await this.deleteSettings(entityManager, userId, keysToDelete);
+            }
+            return await entityManager.getRepository(UserSetting).save(newSettings);
         });
-    }
-    private async deleteSettings(entityManager: EntityManager, userId: number, keys: string[]): Promise<DeleteResult> {
-        return entityManager.createQueryBuilder()
-            .delete()
-            .from(UserSetting)
-            .where('"userId" = :userId AND "key" IN (:...keys)', {userId, keys})
-            .execute();
     }
     /**
      * Attempts to build a more user friendly timezone out of the browsers timezone.
@@ -140,23 +116,47 @@ export class UserService {
             avatarURL += 'avatars/' + discordUser.id + '/' + discordUser.avatar;
         } else {
             const defaultImage = parseInt(discordUser.discriminator, 10) % 5;
-            avatarURL += 'embed/avatars/' + defaultImage;
+            avatarURL += 'embed/avatars/' + String(defaultImage);
         }
         return avatarURL + '.png?size=128';
-    }
-    private isValidTimezone(timezone: string): boolean {
-        return moment.tz.zone(timezone) != null;
     }
     /**
      * Checks the current session for a user, and throws a 401 if one isn't found.
      * @param ctx - The context to search for a user session on.
      */
     public errorIfNotAuthed(ctx: RContext) {
-        // tslint:disable-next-line:max-line-length
-        // TODO Actual auth/route protection using JWT, this is just memes, https://stackoverflow.com/questions/63048522/protect-only-certain-routes-with-koa-jwt
+        /* eslint-disable */
         if (!ctx.session || !ctx.session.user) {
             ctx.unauthorized ();
             ctx.res.end();
         }
+        /* eslint-enable */
+    }
+    private async deleteSettings(entityManager: EntityManager, userId: number, keys: string[]): Promise<DeleteResult> {
+        return entityManager.createQueryBuilder()
+            .delete()
+            .from(UserSetting)
+            .where('"userId" = :userId AND "key" IN (:...keys)', {userId, keys})
+            .execute();
+    }
+    /**
+     * Updates properties on the user that should be checked/updated on every login.
+     * @param user - The user to update.
+     * @param discordUser - The discord user to use as a source for update values.
+     * @param timezone - The users timezone.
+     */
+    private async onLoginUpdate(user: User, discordUser: DiscordUser, timezone: string): Promise<User> {
+        const userRepository = getConnection().getRepository(User);
+        // Update username/email from discord and last login
+        user.username = discordUser.username;
+        user.email = discordUser.email;
+        if (this.isValidTimezone(timezone)) {
+            user.timezone = timezone;
+        }
+        user.lastLogin = new Date();
+        return userRepository.save(user);
+    }
+    private isValidTimezone(timezone: string): boolean {
+        return moment.tz.zone(timezone) != null;
     }
 }

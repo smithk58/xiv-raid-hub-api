@@ -12,9 +12,11 @@ export class PropertyService {
     loadProperties(propertiesToLoad: Record<string, any>) {
         const propMap: Record<string, IProperty<PropertyValue>> = {};
         Object.keys(propertiesToLoad).forEach((prop) => {
-            // @ts-ignore
+            /* eslint-disable */
+            // @ts-ignore but can't force enforce constructor w/ interface
             const property = new propertiesToLoad[prop]();
             propMap[property.getKey()] = property;
+            /* eslint-enable */
         });
         return propMap;
     }

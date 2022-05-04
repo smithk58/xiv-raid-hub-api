@@ -43,7 +43,7 @@ export class RaidGroupService {
         // Ensure the raid group exists and they at least have view access
         const canView = await this.raidGroupSecurity.canViewRaidGroup(userId, raidGroupId);
         if (!canView) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as RaidGroup);
         }
         const raidGroup = await getConnection()
             .getRepository(RaidGroup)
@@ -87,7 +87,7 @@ export class RaidGroupService {
     public async copyRaidGroup(userId: number, raidGroupId: number): Promise<RaidGroup> {
         const groupToClone = await this.getRaidGroupWithCharacters(userId, raidGroupId);
         if (!groupToClone) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as RaidGroup);
         }
         delete groupToClone.id;
         groupToClone.name += ' Copy';
@@ -160,7 +160,7 @@ export class RaidGroupService {
         // Ensure the raid group exists and they can edit it before continuing
         const canEdit = await this.raidGroupSecurity.canEditRaidGroup(userId, raidGroupId);
         if (!canEdit) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as DeleteResult);
         }
         // Wrap all the deletes in a transaction
         return getManager().transaction(async (entityManager: EntityManager) => {
@@ -203,7 +203,7 @@ export class RaidGroupService {
         // Ensure the raid group exists and they at least have view access
         const canView = await this.raidGroupSecurity.canViewRaidGroup(userId, raidGroupId);
         if (!canView) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as RaidGroupCharacter[]);
         }
         return getManager().transaction(async (entityManager: EntityManager) => {
             await this.deleteRaidGroupAlarms(entityManager, raidGroupId);

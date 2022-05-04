@@ -15,11 +15,7 @@ import { Exclude } from 'class-transformer';
 import { RaidGroup } from './RaidGroup';
 import { User } from './User';
 import { Alarm } from './Alarm';
-
-export enum AlarmType {
-    USER = 'user',
-    CHANNEL = 'channel'
-}
+import { AlarmType } from '../../models/AlarmType';
 
 @Unique('unique_alarm', ['raidGroupId', 'targetId', 'type', 'offsetHour'])
 @Entity({name: 'raid_group_alarm_definitions'})
@@ -64,7 +60,7 @@ export class AlarmDefinition {
     ownerId: number;
 
     @Exclude()
-    @ManyToOne(type => User, user => user.raidGroupAlarms, {nullable: false})
+    @ManyToOne(() => User, user => user.raidGroupAlarms, {nullable: false})
     @JoinColumn({name: 'ownerId'})
     owner: User;
 
@@ -72,12 +68,12 @@ export class AlarmDefinition {
     raidGroupId: number;
 
     @Exclude()
-    @ManyToOne(type => RaidGroup, raidGroup => raidGroup.alarms, {nullable: false})
+    @ManyToOne(() => RaidGroup, raidGroup => raidGroup.alarms, {nullable: false})
     @JoinColumn({name: 'raidGroupId'})
     raidGroup: RaidGroup;
 
     @Exclude()
-    @OneToMany(type => Alarm, alarm => alarm.alarmDefinition, {onDelete: 'CASCADE'})
+    @OneToMany(() => Alarm, alarm => alarm.alarmDefinition, {onDelete: 'CASCADE'})
     alarms: Alarm[];
 
     @BeforeInsert()

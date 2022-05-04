@@ -2,7 +2,7 @@ import { DeleteResult, EntityManager, getConnection, getManager } from 'typeorm'
 import { Inject, Singleton } from 'typescript-ioc';
 import { PG_UNIQUE_VIOLATION } from '@drdgvhbh/postgres-error-codes';
 
-import { AlarmDefinition, AlarmType } from '../repository/entity/AlarmDefinition';
+import { AlarmDefinition } from '../repository/entity/AlarmDefinition';
 import { RaidGroupService } from './RaidGroupService';
 import { DiscordApi, DiscordGuildWithChannels } from './api-wrappers/discord/discord-api';
 import { UserService } from './UserService';
@@ -13,6 +13,9 @@ import { ValidationError} from '../utils/errors/ValidationError';
 import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
 import { Alarm } from '../repository/entity/Alarm';
 import { RaidGroupSecurityService } from './RaidGroupSecurityService';
+import { IdNamePair } from './api-wrappers/bot/IdNamePair';
+import { SimpleGuild } from './api-wrappers/bot/SimpleGuild';
+import { AlarmType } from '../models/AlarmType';
 
 @Singleton
 export class AlarmService {
@@ -59,67 +62,10 @@ export class AlarmService {
         }
         return this.saveAlarmDefinition(alarm, userId, userDiscordId, token);
     }
-    private async saveAlarmDefinition(alarmDef: AlarmDefinition, userId: number, userDiscordId: string, token: string) {
-        // Generate alarms for this alarm definition
-        const weeklyRaidTimes = await this.getWeeklyRaidTimes(userId, alarmDef.raidGroupId);
-        // Not allowed to see the raid group if weekly times are null
-        if (weeklyRaidTimes === null) {
-            return Promise.resolve(null);
-        }
-        // Confirm the guild is allowed and the selected channel/role are valid
-        const isChannelAlarm = alarmDef.type === AlarmType.CHANNEL;
-        const hasRole = !!alarmDef.targetRoleId;
-        // Confirm the guild is allowed and the selected channel/role are valid
-        const targetGuild = await this.getGuildDetail(token, alarmDef.targetGuildId);
-        if (!targetGuild) {
-            throw new ValidationError('Invalid discord server. You require Manage Guild permission on the server and both you and the' +
-                ' XIV Raid Hub bot need to be in the server.', 'targetGuildId'
-            );
-        }
-        // Validate they have permission for the target server/channel, or assign the user as the target
-        if (isChannelAlarm) {
-            // Confirm the channel exists on the target server
-            const targetChannel = targetGuild.channels.find(channel => channel.id === alarmDef.targetId);
-            if (!targetChannel) {
-                throw new ValidationError('Invalid discord channel. Perhaps the the channel was deleted before you saved the alarm, or the bot' +
-                    'can\'t see the channel.', 'targetId'
-                );
-            }
-            alarmDef.targetName = targetGuild.name + ' / ' + targetChannel.name;
-            // Confirm role exists on target server, set its name if found, otherwise explicitly clear the fields
-            if (hasRole) {
-                const targetRole = targetGuild.roles.find(role => role.id === alarmDef.targetRoleId);
-                if (!targetRole) {
-                    throw new ValidationError('Invalid discord role. Perhaps the the role was deleted before you saved the alarm.', 'targetId');
-                }
-                alarmDef.targetRoleName = targetRole.name;
-            }
-        } else {
-            alarmDef.targetName = targetGuild.name + ' / ' + 'DM to you';
-            alarmDef.targetId = userDiscordId;
-        }
-        // Clear out role fields if no role
-        if (!hasRole) {
-            alarmDef.targetRoleId = null;
-            alarmDef.targetRoleName = null;
-        }
-        alarmDef.ownerId = userId;
-        // Wrap all saves in a transaction
-        return getManager().transaction(async (entityManager: EntityManager) => {
-            const savedAlarmDef = await entityManager.getRepository(AlarmDefinition).save(alarmDef).catch(this.duplicateAlarmHandler);
-            savedAlarmDef.raidGroup = await this.raidGroupService.getRaidGroup(savedAlarmDef.raidGroupId);
-            // Remove existing alarms
-            const alarmRepo = entityManager.getRepository(Alarm);
-            await alarmRepo.delete({alarmDefinitionId: savedAlarmDef.id});
-            // Add/update alarms for the alarm def
-            await this.createAlarms(entityManager, weeklyRaidTimes, [savedAlarmDef]);
-            return savedAlarmDef;
-        });
-    }
     public async deleteAlarmDefinition(userId: number, alarmId: number): Promise<DeleteResult> {
         const canEditAlarm = await this.canEditAlarm(userId, alarmId);
         if (!canEditAlarm) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as DeleteResult);
         }
         return getConnection().createQueryBuilder()
             .delete()
@@ -161,7 +107,7 @@ export class AlarmService {
                 // Generate a week mask for the UTC days we execute the utc time on
                 let utcWeekMask = 0;
                 for (const day of DaysOfWeekByJsDay.values()) { // Sun(0)-Sat(6)
-                    // tslint:disable-next-line:no-bitwise
+                    // eslint-disable-next-line no-bitwise
                     if (raidTime.weekMask & day.bit) {
                         // Use the utcDayOffset to get the day of the week we actually execute the alarm on
                         let targetJsDay = (day.jsDay + utcDayOffset);
@@ -186,7 +132,7 @@ export class AlarmService {
      * @param token - The discord token for the current user, for retrieving the guilds they're in.
      * @param guildId - The  guild ID to get.
      */
-    public async getGuildDetail(token: string, guildId: string) {
+    public async getGuildDetail(token: string, guildId: string): Promise<SimpleGuild> {
         const usersGuilds = await this.discordApi.getGuilds(token);
         // TODO Probably more efficient to hit /guilds/<id>/members/<id>, but am lazy atm
         const guild = usersGuilds.find((g) => g.id === guildId);
@@ -205,7 +151,7 @@ export class AlarmService {
      * @param token - The discord token for the current user, for retrieving the guilds they're in.
      * @param targetGuildId - The target guild ID to get channels for.
      */
-    public async getGuilds(token: string, targetGuildId?: string) {
+    public async getGuilds(token: string, targetGuildId?: string): Promise<IdNamePair[]> {
         const usersGuilds = await this.discordApi.getGuilds(token);
         const botsGuildMap = await this.botApi.getGuilds().catch(() => {
             throw new Error('Unable to get the list of servers available to the bot.');
@@ -225,26 +171,26 @@ export class AlarmService {
         }
         return guilds;
     }
-    public async getGuildChannels(guildId: string, token?: string) {
+    public async getGuildChannels(guildId: string, token?: string): Promise<IdNamePair[]> {
         // Validate user is allowed to see guild if we're provided a token
         if (token) {
             const usersGuilds = await this.discordApi.getGuilds(token);
             const targetGuild = usersGuilds.find(guild => guild.id === guildId);
             // Ensure it's a guild they're in and have manage permission to before returning channels
             if (!targetGuild || !this.hasManageGuild(targetGuild)) {
-                return Promise.resolve(null);
+                return Promise.resolve(null as IdNamePair[]);
             }
         }
         return this.botApi.getGuildChannels(guildId);
     }
-    public async getGuildRoles(guildId: string, token?: string) {
+    public async getGuildRoles(guildId: string, token?: string): Promise<IdNamePair[]> {
         // Validate user is allowed to see guild if we're provided a token
         if (token) {
             const usersGuilds = await this.discordApi.getGuilds(token);
             const targetGuild = usersGuilds.find(guild => guild.id === guildId);
             // Ensure it's a guild they're in before returning roles
             if (!targetGuild) {
-                return Promise.resolve(null);
+                return Promise.resolve(null as IdNamePair[]);
             }
         }
         return this.botApi.getGuildRoles(guildId);
@@ -257,7 +203,7 @@ export class AlarmService {
     public async getWeeklyRaidTimes(userId: number, raidGroupId: number): Promise<WeeklyRaidTime[]> {
         const canSee = await this.raidGroupSecurity.canViewRaidGroup(userId, raidGroupId);
         if (!canSee) {
-            return Promise.resolve(null);
+            return Promise.resolve(null as WeeklyRaidTime[]);
         }
         return getConnection()
             .getRepository(WeeklyRaidTime)
@@ -281,6 +227,66 @@ export class AlarmService {
             .select(['ad', 'rg'])
             .getMany();
     }
+    private async saveAlarmDefinition(alarmDef: AlarmDefinition, userId: number, userDiscordId: string, token: string) {
+        // Generate alarms for this alarm definition
+        const weeklyRaidTimes = await this.getWeeklyRaidTimes(userId, alarmDef.raidGroupId);
+        // Not allowed to see the raid group if weekly times are null
+        if (weeklyRaidTimes === null) {
+            return Promise.resolve(null);
+        }
+        // Confirm the guild is allowed and the selected channel/role are valid
+        const isChannelAlarm = alarmDef.type === AlarmType.CHANNEL;
+        const hasRole = !!alarmDef.targetRoleId;
+        // Confirm the guild is allowed and the selected channel/role are valid
+        const targetGuild = await this.getGuildDetail(token, alarmDef.targetGuildId);
+        if (!targetGuild) {
+            throw new ValidationError('Invalid discord server. You require Manage Guild permission on the server and both you and the' +
+                ' XIV Raid Hub bot need to be in the server.', 'targetGuildId'
+            );
+        }
+        // Validate they have permission for the target server/channel, or assign the user as the target
+        if (isChannelAlarm) {
+            // Confirm the channel exists on the target server
+            const targetChannel = targetGuild.channels.find(channel => channel.id === alarmDef.targetId);
+            if (!targetChannel) {
+                throw new ValidationError('Invalid discord channel. Perhaps the the channel was deleted before you saved the ' +
+                    'alarm, or the bot can\'t see the channel.', 'targetId'
+                );
+            }
+            alarmDef.targetName = targetGuild.name + ' / ' + targetChannel.name;
+            // Confirm role exists on target server, set its name if found, otherwise explicitly clear the fields
+            if (hasRole) {
+                const targetRole = targetGuild.roles.find(role => role.id === alarmDef.targetRoleId);
+                if (!targetRole) {
+                    throw new ValidationError('Invalid discord role. Perhaps the the role was deleted before you saved the' +
+                        'alarm.', 'targetId'
+                    );
+                }
+                alarmDef.targetRoleName = targetRole.name;
+            }
+        } else {
+            alarmDef.targetName = targetGuild.name + ' / ' + 'DM to you';
+            alarmDef.targetId = userDiscordId;
+        }
+        // Clear out role fields if no role
+        if (!hasRole) {
+            alarmDef.targetRoleId = null;
+            alarmDef.targetRoleName = null;
+        }
+        alarmDef.ownerId = userId;
+        // Wrap all saves in a transaction
+        return getManager().transaction(async (entityManager: EntityManager) => {
+            // eslint-disable-next-line
+            const savedAlarmDef = await entityManager.getRepository(AlarmDefinition).save(alarmDef).catch(this.duplicateAlarmHandler.bind(this));
+            savedAlarmDef.raidGroup = await this.raidGroupService.getRaidGroup(savedAlarmDef.raidGroupId);
+            // Remove existing alarms
+            const alarmRepo = entityManager.getRepository(Alarm);
+            await alarmRepo.delete({alarmDefinitionId: savedAlarmDef.id});
+            // Add/update alarms for the alarm def
+            await this.createAlarms(entityManager, weeklyRaidTimes, [savedAlarmDef]);
+            return savedAlarmDef;
+        });
+    }
     private async canEditAlarm(userId: number, alarmId: number): Promise<boolean> {
         return await getConnection()
             .getRepository(AlarmDefinition)
@@ -289,10 +295,10 @@ export class AlarmService {
             .getCount() > 0;
     }
     private hasManageGuild(guild: DiscordGuild) {
-        // tslint:disable-next-line:no-bitwise
+        // eslint-disable-next-line no-bitwise
         return (guild.permissions & 20) !== 0; // 20 = manage guild
     }
-    private duplicateAlarmHandler(error: any): never {
+    private duplicateAlarmHandler(error: {code: string}): never {
         if (error.code === PG_UNIQUE_VIOLATION) {
             throw new Error('There\'s already an alarm like that! Maybe someone in your raid group already set one up?');
         }

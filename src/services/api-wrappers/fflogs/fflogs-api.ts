@@ -2,7 +2,7 @@ import { Inject, Singleton } from 'typescript-ioc';
 import fetch, { Response } from 'node-fetch';
 import { gql, GraphQLClient } from 'graphql-request';
 
-import { Query, Region, Server, Spec } from '../../../fflogs-types';
+import { Query, Region, Server } from '../../../fflogs-types';
 import { URLSearchParams } from 'url';
 import { EnvService } from '../../EnvService';
 import { CacheService } from '../../CacheService';
@@ -19,8 +19,8 @@ export class FFLogsAPI {
     /**
      * Returns a list of FF14 classes.
      */
-    public async getClasses() {
-        /*const cacheKey = 'ffClasses';
+    public getClasses() {
+        /* const cacheKey = 'ffClasses';
         let classes =  this.cacheService.get<Spec[]>(cacheKey);
         // TODO recently started throwing an error for no apparent reason if you query specs or anything below it
         if (classes === undefined) {
@@ -139,7 +139,7 @@ export class FFLogsAPI {
      * Requests a new public access token from FFLogs and sets it on the graphQL client.
      */
     public async setPublicToken() {
-        const result = await this.requestToken().catch((error) => {
+        const result = await this.requestToken().catch((error: {statusText: string}) => {
             throw new Error('Unable to access FFlogs API. ' + error.statusText);
         });
         if (result) {
@@ -162,12 +162,12 @@ export class FFLogsAPI {
             body: params,
             headers: {authorization: 'Basic ' + basicAuth}
         });
-        return this.handleResponse(response);
+        return this.handleResponse<{access_token: string}>(response);
     }
-    private async handleResponse(response: Response) {
+    private handleResponse<T>(response: Response) {
         if (response.status !== 200) {
             return Promise.reject(response);
         }
-        return response.json();
+        return response.json() as Promise<T>;
     }
 }

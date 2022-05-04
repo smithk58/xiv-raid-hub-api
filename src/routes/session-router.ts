@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as Router from '@koa/router';
 import { DefaultState, Context, ParameterizedContext } from 'koa';
 

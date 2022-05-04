@@ -1,4 +1,4 @@
-// Needed for context type shenanigans
+/* eslint-disable */
 import { Context, DefaultState, ParameterizedContext } from 'koa';
 import * as Router from '@koa/router';
 import { plainToClass } from 'class-transformer';

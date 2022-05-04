@@ -1,5 +1,6 @@
+/* eslint-disable */
 import * as Koa from 'koa';
-import * as HttpStatus from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 
 export async function handleError(ctx: Koa.Context, next: () => Promise<any>) {
     try {
@@ -13,7 +14,7 @@ export async function handleError(ctx: Koa.Context, next: () => Promise<any>) {
             const errorKeys = Object.keys(firstErrorBatch);
             ctx.body = firstErrorBatch[errorKeys[0]];
         } else {
-            ctx.status = error.statusCode || error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+            ctx.status = error.statusCode || error.status || StatusCodes.INTERNAL_SERVER_ERROR;
             ctx.body = error.message || error.toString();
         }
         ctx.app.emit('error', error, ctx);
