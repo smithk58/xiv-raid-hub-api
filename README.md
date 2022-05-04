@@ -8,7 +8,8 @@ Run `npm run build` to build the project. The build artifacts will be stored in 
 
 ## Production
 
-The application can be run in production by executing the `build` steps, followed by the `npm run start` script.
+The application can be run in production by executing the `build` step, followed by the `npm run start` script. Note that
+you should make sure `NODE_ENV` isn't 'dev' so the compiled typeORM entities are used (see ormconfig.js).
 
 ## Lint
 
