@@ -1,0 +1,10 @@
+node_modules
+dist
+# Misc config that we don't want invalidating layers
+Dockerfile
+README.md
+.graphqlconfig
+.dockerignore
+.gitignore
+.github
+.env

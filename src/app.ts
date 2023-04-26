@@ -20,7 +20,7 @@ const envService: EnvService = Container.get(EnvService);
 
 const app: Koa = new Koa();
 app.keys = [envService.appSecretKey];
-// Security
+// Apply common security
 app.use(Helmet());
 // Generic error handling middleware.
 app.use(handleError);

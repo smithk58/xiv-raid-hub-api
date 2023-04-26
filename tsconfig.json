@@ -13,7 +13,6 @@
   },
   "include": [
     "**/*.ts",
-    "ormconfig.js",
-    "src/oauth-config.json"
+    "src/oauth-config.json",
   ]
 }
