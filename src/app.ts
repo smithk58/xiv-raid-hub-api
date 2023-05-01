@@ -5,16 +5,17 @@ import * as Logger from 'koa-logger';
 import * as Cors from '@koa/cors';
 import * as bodyParser from 'koa-bodyparser';
 import * as session from 'koa-session';
+import * as dotenv from 'dotenv'
+dotenv.config()
 import 'reflect-metadata'; // required for class-transformer and typeorm
 const respond = require('koa-respond');
 const grant = require('grant').koa();
 import apiRouter from './routes';
-import { createConnection } from 'typeorm';
 import { checkOriginAgainstWhitelist } from './utils/middleware/origin-whitelist';
 import { handleError } from './utils/middleware/error-handler';
 import { Container } from 'typescript-ioc';
 import { EnvService } from './services/EnvService';
-require('dotenv').config();
+import AppDataSource from './db-connection';
 
 const envService: EnvService = Container.get(EnvService);
 
@@ -59,15 +60,14 @@ app.use(bodyParser({
 // Easier responses https://www.npmjs.com/package/koa-respond
 app.use(respond());
 
-// Create connection to DB
-createConnection().then(() => {
+AppDataSource.initialize().then(() => {
     console.log('DB connection successful');
     // Routes
     app.use(apiRouter.routes());
     app.use(apiRouter.allowedMethods());
-}, (err) => {
+}).catch((err) => {
     console.log('DB connection failed', err);
-});
+})
 
 // Application error logging.
 app.on('error', console.error);
