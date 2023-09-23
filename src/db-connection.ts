@@ -1,18 +1,23 @@
 import { DataSource } from 'typeorm';
 
+const isDev = process.env.NODE_ENV === 'development';
+const srcDir = isDev ? 'src' : 'dist'
+const fileExt = isDev ? 'ts' : 'js';
 const AppDataSource = new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST,
-    port: 5432,
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    entities: ['dist/repository/entity/*/*.js'],
-    migrations: ['dist/repository/migration/*/*.js'],
-    subscribers: ['dist/repository/subscriber/*/*.js'],
+    entities: [srcDir+'/repository/entity/**/*.'+fileExt],
+    migrations: [srcDir+'/repository/migration/**/*.'+fileExt],
+    subscribers: [srcDir+'/repository/subscriber/**/*.'+fileExt],
     ssl: {
         rejectUnauthorized: false
-    }
+    },
+    logging: ['error'],
+    synchronize: isDev
 });
 
 export default AppDataSource;
