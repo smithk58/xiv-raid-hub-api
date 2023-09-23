@@ -1,4 +1,4 @@
-import { DeleteResult, getConnection } from 'typeorm';
+import { DeleteResult } from 'typeorm';
 import { Inject, Singleton } from 'typescript-ioc';
 import { IncomingMessage } from 'http';
 import * as cheerio from 'cheerio';
@@ -7,6 +7,7 @@ import * as https from 'https';
 import { UserCharacter } from '../repository/entity/UserCharacter';
 import { Character } from '../repository/entity/Character';
 import { UserService } from './UserService';
+import AppDataSource from '../db-connection';
 
 @Singleton
 export class CharacterService {
@@ -16,7 +17,7 @@ export class CharacterService {
      * @param userId - The ID of the user to get characters for.
      */
     public async getUserCharacters(userId: number): Promise<UserCharacter[]> {
-        return getConnection()
+        return AppDataSource
             .getRepository(UserCharacter)
             .createQueryBuilder('uc')
             .innerJoin('uc.character', 'character')
@@ -38,7 +39,7 @@ export class CharacterService {
         userCharacter.defaultClass = character.defaultClass;
         // Assign current user as owner of the character
         userCharacter.user = await this.userService.getUser(userId);
-        return getConnection().getRepository(UserCharacter).save(userCharacter);
+        return AppDataSource.getRepository(UserCharacter).save(userCharacter);
     }
 
     /**
@@ -49,7 +50,7 @@ export class CharacterService {
      */
     public async updateUserCharacter(userId: number, character: Character): Promise<UserCharacter> {
         // Get current users existing character and search for a possible owner
-        const existingCharacter = await getConnection()
+        const existingCharacter = await AppDataSource
             .getRepository(UserCharacter)
             .createQueryBuilder('uc')
             .innerJoin('uc.character', 'character')
@@ -65,7 +66,7 @@ export class CharacterService {
             existingCharacter.character.name = character.name;
             existingCharacter.character.server = character.server;
         }
-        await getConnection().getRepository(UserCharacter).save(existingCharacter);
+        await AppDataSource.getRepository(UserCharacter).save(existingCharacter);
         return Promise.resolve(existingCharacter);
     }
 
@@ -75,7 +76,7 @@ export class CharacterService {
      * @param characterId - The ID of the character to delete.
      */
     public async deleteUserCharacter(userId: number, characterId: number): Promise<DeleteResult> {
-        return getConnection()
+        return AppDataSource
             .createQueryBuilder()
             .delete()
             .from(UserCharacter)
@@ -89,7 +90,7 @@ export class CharacterService {
      * @param characterId - The ID of the character to confirm.
      */
     public async confirmCharacter(userId: number, characterId: number): Promise<boolean> {
-        const character = await getConnection()
+        const character = await AppDataSource
             .getRepository(UserCharacter)
             .createQueryBuilder('uc')
             .where('uc."characterId" = :characterId AND uc."userId" = :userId', {userId, characterId})
@@ -99,7 +100,7 @@ export class CharacterService {
         }
         const result = await this.checkLodestoneProfileForString(characterId, 'xiv-raid-hub-' + String(userId));
         if (result) {
-            await getConnection()
+            await AppDataSource
                 .createQueryBuilder()
                 .update(UserCharacter)
                 .set({isOwner: true})

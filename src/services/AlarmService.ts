@@ -1,4 +1,4 @@
-import { DeleteResult, EntityManager, getConnection, getManager } from 'typeorm';
+import { DeleteResult, EntityManager } from 'typeorm';
 import { Inject, Singleton } from 'typescript-ioc';
 import { PG_UNIQUE_VIOLATION } from '@drdgvhbh/postgres-error-codes';
 
@@ -16,6 +16,7 @@ import { RaidGroupSecurityService } from './RaidGroupSecurityService';
 import { IdNamePair } from './api-wrappers/bot/IdNamePair';
 import { SimpleGuild } from './api-wrappers/bot/SimpleGuild';
 import { AlarmType } from '../models/AlarmType';
+import AppDataSource from '../db-connection';
 
 @Singleton
 export class AlarmService {
@@ -26,7 +27,7 @@ export class AlarmService {
     @Inject private botApi: BotApi;
 
     public async getAlarmDefinitions(userId: number) {
-        return getConnection()
+        return AppDataSource
             .getRepository(AlarmDefinition)
             .createQueryBuilder('alarm')
             .innerJoin('alarm.raidGroup', 'group')
@@ -36,7 +37,7 @@ export class AlarmService {
             .getMany();
     }
     public async getAlarmDefinitionsForRaidGroup(raidGroupId: number) {
-        return getConnection()
+        return AppDataSource
             .getRepository(AlarmDefinition)
             .createQueryBuilder('alarm')
             .where('"alarm"."raidGroupId" = :raidGroupId', {raidGroupId})
@@ -67,7 +68,7 @@ export class AlarmService {
         if (!canEditAlarm) {
             return Promise.resolve(null as DeleteResult);
         }
-        return getConnection().createQueryBuilder()
+        return AppDataSource.createQueryBuilder()
             .delete()
             .from(AlarmDefinition)
             .where('id = :id', {id: alarmId})
@@ -205,7 +206,7 @@ export class AlarmService {
         if (!canSee) {
             return Promise.resolve(null as WeeklyRaidTime[]);
         }
-        return getConnection()
+        return AppDataSource
             .getRepository(WeeklyRaidTime)
             .createQueryBuilder()
             .where('"raidGroupId" = :raidGroupId', {raidGroupId})
@@ -216,7 +217,7 @@ export class AlarmService {
         const jsDay = new Date().getUTCDay();
         const curDayBit = DaysOfWeekByJsDay.get(jsDay).bit;
         // Get all alarms whose hours match the current hour
-        return await getConnection()
+        return await AppDataSource
             .getRepository(AlarmDefinition)
             .createQueryBuilder('ad')
             .innerJoin('ad.alarms', 'a')
@@ -275,7 +276,7 @@ export class AlarmService {
         }
         alarmDef.ownerId = userId;
         // Wrap all saves in a transaction
-        return getManager().transaction(async (entityManager: EntityManager) => {
+        return AppDataSource.transaction(async (entityManager: EntityManager) => {
             // eslint-disable-next-line
             const savedAlarmDef = await entityManager.getRepository(AlarmDefinition).save(alarmDef).catch(this.duplicateAlarmHandler.bind(this));
             savedAlarmDef.raidGroup = await this.raidGroupService.getRaidGroup(savedAlarmDef.raidGroupId);
@@ -288,7 +289,7 @@ export class AlarmService {
         });
     }
     private async canEditAlarm(userId: number, alarmId: number): Promise<boolean> {
-        return await getConnection()
+        return await AppDataSource
             .getRepository(AlarmDefinition)
             .createQueryBuilder('alarm')
             .where('alarm.id = :alarmId AND alarm."ownerId" = :userId', {alarmId, userId})

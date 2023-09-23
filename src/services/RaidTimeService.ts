@@ -1,4 +1,4 @@
-import { DeleteResult, EntityManager, getConnection, getManager } from 'typeorm';
+import { DeleteResult, EntityManager } from 'typeorm';
 import { Inject, Singleton } from 'typescript-ioc';
 
 import { RaidGroup } from '../repository/entity/RaidGroup';
@@ -7,6 +7,7 @@ import { UserService } from './UserService';
 import { AlarmDefinition } from '../repository/entity/AlarmDefinition';
 import { RaidGroupSecurityService } from './RaidGroupSecurityService';
 import { AlarmService } from './AlarmService';
+import AppDataSource from '../db-connection';
 
 @Singleton
 export class RaidTimeService {
@@ -36,7 +37,7 @@ export class RaidTimeService {
      * @param userId - The ID of the user you want all raid times for.
      */
     public async getAllWeeklyRaidTimes(userId: number): Promise<WeeklyRaidTime[]> {
-        return getConnection()
+        return AppDataSource
             .getRepository(WeeklyRaidTime)
             .createQueryBuilder('wrt')
             .leftJoin('wrt.raidGroup', 'group')
@@ -64,7 +65,7 @@ export class RaidTimeService {
             raidTime.raidGroupId = raidGroupId;
         }
         // Wrap deletes/saves in a transaction
-        return getManager().transaction(async (entityManager: EntityManager) => {
+        return AppDataSource.transaction(async (entityManager: EntityManager) => {
             const result = await this.deleteWeeklyRaidTimes(entityManager, raidGroupId);
             // Only update hasSchedule on raid group if going from 0 to >0 or vice versa.
             const noneToSome = result.affected === 0 && raidTimes.length > 0;

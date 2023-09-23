@@ -1,4 +1,3 @@
-import { getConnection } from 'typeorm';
 import { Inject, Singleton } from 'typescript-ioc';
 
 import { RaidGroup } from '../repository/entity/RaidGroup';
@@ -7,6 +6,7 @@ import { RaidGroupCharacter } from '../repository/entity/RaidGroupCharacter';
 import { UserCharacter } from '../repository/entity/UserCharacter';
 import { AllowAddToRaidGroup } from '../models/user-settings/properties';
 import { ValidationError } from '../utils/errors/ValidationError';
+import AppDataSource from '../db-connection';
 
 @Singleton
 export class RaidGroupSecurityService {
@@ -19,7 +19,7 @@ export class RaidGroupSecurityService {
      */
     public async canViewRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
         // TODO Investigate subquery instead of left join for the sharing stuff.
-        return await getConnection()
+        return await AppDataSource
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
             .leftJoin('group.characters', 'characters')
@@ -35,14 +35,14 @@ export class RaidGroupSecurityService {
      * @param raidGroupId - The ID of the raid group to check against.
      */
     public async canEditRaidGroup(userId: number, raidGroupId: number): Promise<boolean> {
-        return await getConnection()
+        return await AppDataSource
             .getRepository(RaidGroup)
             .createQueryBuilder()
             .where('id = :id AND "ownerId" = :ownerId', {id: raidGroupId, ownerId: userId})
             .getCount() > 0;
     }
     public async canAddCharacters(userId: number, characterIds: number[], sourceCharacters: RaidGroupCharacter[]) {
-        const blockedCharacters = await getConnection()
+        const blockedCharacters = await AppDataSource
             .getRepository(UserCharacter)
             .createQueryBuilder('uc')
             .innerJoin('user_settings', 'us', 'uc."userId" = us."userId"')

@@ -8,6 +8,7 @@ import { UserService } from '../services/UserService';
 import { DiscordApi } from '../services/api-wrappers/discord/discord-api';
 import { Container } from 'typescript-ioc';
 import { EnvService } from '../services/EnvService';
+import { env } from 'string-env-interpolation';
 
 const discordApi: DiscordApi = Container.get(DiscordApi);
 const userService: UserService = Container.get(UserService);
@@ -18,8 +19,7 @@ export type RContext = ParameterizedContext<DefaultState, Context & Router.Route
 const routerOpts: Router.RouterOptions = {prefix: '/session'};
 const sessionRouter: Router = new Router<DefaultState, Context>(routerOpts);
 /**
- * Grant redirects here after a user has authed via discord. Should confirm the user is who they say they are, update
- * our local user, etc..
+ * Grant redirects here after a user has authed via discord. Should confirm the user is who they say they are, update our local user, etc..
  */
 sessionRouter.get('/login', async (ctx: RContext) => {
     // Attempt to resolve the discord user if we have an access token
@@ -40,7 +40,11 @@ sessionRouter.get('/login', async (ctx: RContext) => {
             ctx.session.discordGrant = oauthGrant;
         }
     }
-    ctx.redirect(envService.frontendBaseURL);
+    if (envService.frontendBaseURL) {
+        ctx.redirect(envService.frontendBaseURL);
+    } else {
+        ctx.send(500, 'Unable to redirect you to back to the website, the server appears to be missing configuration.');
+    }
 });
 sessionRouter.get('/fflogs', async (ctx: RContext) => {
     const oauthGrant = ctx.session.grant;

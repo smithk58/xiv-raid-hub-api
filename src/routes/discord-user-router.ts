@@ -17,13 +17,22 @@ discordUserRouter.use(async (ctx: RContext, next) => {
     await apiKeyService.errorIfNotValidAPIKey(ctx);
     return next();
 });
+discordUserRouter.get('/characters', async (ctx: RContext) => {
+    const userId = ctx.params.discordUserId;
+    const characters = await discordUserService.getDiscordUserCharacters(userId);
+    if (characters) {
+        ctx.ok(characters);
+    } else {
+        ctx.notFound('That user doesn\'t exist, or you don\'t have permission to see their information.');
+    }
+});
 discordUserRouter.get('/schedule', async (ctx: RContext) => {
     const userId = ctx.params.discordUserId;
     const raidTimes = await discordUserService.getDiscordUsersWeeklyRaidTimes(userId);
     if (raidTimes) {
         ctx.ok(raidTimes);
     } else {
-        ctx.notFound('That user doesn\'t exist, or you don\'t have permission to see their raid times');
+        ctx.notFound('That user doesn\'t exist, or you don\'t have permission to see their raid times.');
     }
 });
 export default discordUserRouter.routes();

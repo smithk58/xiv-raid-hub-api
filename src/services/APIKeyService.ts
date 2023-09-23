@@ -1,8 +1,8 @@
-import { getConnection } from 'typeorm';
 import { Singleton } from 'typescript-ioc';
 
 import { APIAccess } from '../repository/entity/APIAccess';
 import { RContext } from '../routes/guilds-router';
+import AppDataSource from '../db-connection';
 
 @Singleton
 export class APIKeyService {
@@ -24,7 +24,7 @@ export class APIKeyService {
     }
     public async getAPIKeyMap(): Promise<Record<string, APIAccess>> {
         // TODO get these once and cache 'em
-        const apiKeys = await getConnection()
+        const apiKeys = await AppDataSource
             .getRepository(APIAccess)
             .createQueryBuilder()
             .getMany();

@@ -1,4 +1,4 @@
-import { DeleteResult, EntityManager, getConnection, getManager } from 'typeorm';
+import { DeleteResult, EntityManager } from 'typeorm';
 import { Inject, Singleton } from 'typescript-ioc';
 import { DiscordUser } from './api-wrappers/discord/DiscordUser';
 import * as moment from 'moment-timezone';
@@ -9,6 +9,7 @@ import { UserSetting } from '../repository/entity/UserSetting';
 import * as Properties from '../models/user-settings/properties';
 import { IProperty, PropertyValue } from '../models/user-settings/IProperty';
 import { PropertyService } from './PropertyService';
+import AppDataSource from '../db-connection';
 
 @Singleton
 export class UserService {
@@ -37,10 +38,10 @@ export class UserService {
      * @param userId - The ID of the user to retrieve.
      */
     public async getUser(userId: number): Promise<User> {
-        return getConnection().getRepository(User).findOne({where: {id: userId}});
+        return AppDataSource.getRepository(User).findOne({where: {id: userId}});
     }
     public async getUserByDiscordId(discordId: string): Promise<User> {
-        return getConnection().getRepository(User).findOne( {where: {discordId}});
+        return AppDataSource.getRepository(User).findOne( {where: {discordId}});
     }
     /**
      * Creates a user from the specified discord user.
@@ -57,11 +58,11 @@ export class UserService {
         if (this.isValidTimezone(timezone)) {
             user.timezone = timezone;
         }
-        return getConnection().getRepository(User).save(user);
+        return AppDataSource.getRepository(User).save(user);
     }
 
     public async getSettings(userId: number) {
-        const settings = await getConnection()
+        const settings = await AppDataSource
             .getRepository(UserSetting)
             .createQueryBuilder('us')
             .where('us."userId" = :userId', {userId})
@@ -86,7 +87,7 @@ export class UserService {
                 newSettings.push(new UserSetting(userId, key, property.valueToString(value)));
             }
         }
-        return getManager().transaction(async (entityManager: EntityManager) => {
+        return AppDataSource.transaction(async (entityManager: EntityManager) => {
             if (keysToDelete.length > 0) {
                 await this.deleteSettings(entityManager, userId, keysToDelete);
             }
@@ -146,7 +147,7 @@ export class UserService {
      * @param timezone - The users timezone.
      */
     private async onLoginUpdate(user: User, discordUser: DiscordUser, timezone: string): Promise<User> {
-        const userRepository = getConnection().getRepository(User);
+        const userRepository = AppDataSource.getRepository(User);
         // Update username/email from discord and last login
         user.username = discordUser.username;
         user.email = discordUser.email;

@@ -1,4 +1,4 @@
-import { DeleteResult, EntityManager, getConnection, getManager } from 'typeorm';
+import { DeleteResult, EntityManager } from 'typeorm';
 import { Inject, Singleton } from 'typescript-ioc';
 
 import { RaidGroup } from '../repository/entity/RaidGroup';
@@ -6,6 +6,7 @@ import { RaidGroupCharacter } from '../repository/entity/RaidGroupCharacter';
 import { UserService } from './UserService';
 import { AlarmDefinition } from '../repository/entity/AlarmDefinition';
 import { RaidGroupSecurityService } from './RaidGroupSecurityService';
+import AppDataSource from '../db-connection';
 
 @Singleton
 export class RaidGroupService {
@@ -20,7 +21,7 @@ export class RaidGroupService {
     public getRaidGroups(userId: number): Promise<RaidGroup[]> {
         // Get all raid groups that are owned by this user, or are shared and they own a character in the static
         // Also filter on accepted status (whether or not they've opted in to being a member of the raid group, or haven't chosen yet)
-        return getConnection()
+        return AppDataSource
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
             .leftJoin('group.characters', 'characters')
@@ -32,7 +33,7 @@ export class RaidGroupService {
             .getMany();
     }
     public getRaidGroup(raidGroupId: number): Promise<RaidGroup> {
-        return getConnection().getRepository(RaidGroup).findOne({where: {id: raidGroupId}});
+        return AppDataSource.getRepository(RaidGroup).findOne({where: {id: raidGroupId}});
     }
     /**
      * Returns a raid group and it's raid group characters.
@@ -45,7 +46,7 @@ export class RaidGroupService {
         if (!canView) {
             return Promise.resolve(null as RaidGroup);
         }
-        const raidGroup = await getConnection()
+        const raidGroup = await AppDataSource
             .getRepository(RaidGroup)
             .createQueryBuilder('group')
             .leftJoin('group.characters', 'characters')
@@ -82,7 +83,7 @@ export class RaidGroupService {
         // Assign current user as owner of the new raid group
         raidGroup.owner = await this.userService.getUser(userId);
         raidGroup.isOwner = true;
-        return getConnection().getRepository(RaidGroup).save(raidGroup);
+        return AppDataSource.getRepository(RaidGroup).save(raidGroup);
     }
     public async copyRaidGroup(userId: number, raidGroupId: number): Promise<RaidGroup> {
         const groupToClone = await this.getRaidGroupWithCharacters(userId, raidGroupId);
@@ -97,7 +98,7 @@ export class RaidGroupService {
         groupToClone.owner = await this.userService.getUser(userId);
         groupToClone.ownerId = userId;
         groupToClone.isOwner = true;
-        return getConnection().getRepository(RaidGroup).save(groupToClone);
+        return AppDataSource.getRepository(RaidGroup).save(groupToClone);
     }
     /**
      * Updates a raid group and its raid group characters.
@@ -128,7 +129,7 @@ export class RaidGroupService {
         }
         // Check if they've made any changes to the raid group characters
         const charactersModified = !existingRaidGroup.isEqualCharacters(raidGroup.characters);
-        return getManager().transaction(async (entityManager: EntityManager) => {
+        return AppDataSource.transaction(async (entityManager: EntityManager) => {
             // Delete existing raid group characters if they were changed, since type ORM can't figure out to do so and runs into a
             // unique constraint error, otherwise remove them from the group before saving so it doesn't attempt to save them
             if (charactersModified) {
@@ -163,7 +164,7 @@ export class RaidGroupService {
             return Promise.resolve(null as DeleteResult);
         }
         // Wrap all the deletes in a transaction
-        return getManager().transaction(async (entityManager: EntityManager) => {
+        return AppDataSource.transaction(async (entityManager: EntityManager) => {
             // Have to delete the related character groups and schedule, because typeorms cascade can't figure out composite keys?
             await this.deleteRaidGroupCharacters(entityManager, raidGroupId);
             await this.deleteRaidGroupAlarms(entityManager, raidGroupId);
@@ -205,7 +206,7 @@ export class RaidGroupService {
         if (!canView) {
             return Promise.resolve(null as RaidGroupCharacter[]);
         }
-        return getManager().transaction(async (entityManager: EntityManager) => {
+        return AppDataSource.transaction(async (entityManager: EntityManager) => {
             await this.deleteRaidGroupAlarms(entityManager, raidGroupId);
             const usersCharacters = await entityManager.getRepository(RaidGroupCharacter)
                 .createQueryBuilder('rc')
