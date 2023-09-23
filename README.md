@@ -19,11 +19,13 @@ DISCORD_CLIENT_SECRET=<valid discord client secret, assuming you want to be able
 FRONTEND_BASE_URL=http://localhost:4200
 BACKEND_BASE_URL=http://localhost:3000
 BOT_BASE_URL=http://localhost:3001
-DB_URL=<valid DB connection>
 XIV_RAID_HUB_BOT_API_KEY=<valid bot API key, assuming you want to connect to the bot>
 ALLOWED_ORIGINS=["http://localhost:4200", "http://localhost:3001"]
 PORT=3000
-
+DB_HOST=<e.g. blah.compute-1.amazonaws.com>
+DB_NAME=<the name of the DB on the host>
+DB_USER=<the user to connect as>
+DB_PASS=<the password for the user>
 ```
 * Run the following command from the root of this project `docker run -p 3000:3000 --env-file .env xiv-raid-hub-api`.
 * After executing docker run the server should be available. In particular you can combine it with these similar steps with the frontend project to see the results.
@@ -41,7 +43,7 @@ project however your hosting platform supports it.
 * `DISCORD_CLIENT_SECRET` - The secret for the above ID.
 * * Be sure to add this applications auth URL to your discord applications redirects in the oAuth section. Otherwise discord will not let you
 authenticate (e.g. `https://<your-prod-domain>.com/connect/discord/callback`, or `http://localhost:3000/connect/discord/callback` for development).
-* `DB_URL` - A connection string for a postgres DB to manage the application. The DB itself will be automatically managed by TypeORM.
+* `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT` - Connection information for a postgres DB for the application. The DB itself will be automatically managed by TypeORM.
 * `BACKEND_BASE_URL` - The base URL for the backend (e.g. `http://localhost:3000` for local dev, or `https://<your domain>.com` for production).
 * `FRONTEND_BASE_URL` - Only needs to be set when doing local development with your frontend in its own webserver.
 * `BOT_BASE_URL` - The base URL for the bot. Only needed if doing operations that must talk to the bot. (e.g. set to `http://localhost:3001` for local dev, or https://<your bots domain>.com for production).
@@ -73,11 +75,14 @@ these variables expected values can be found at the top of the Environment Varia
 * `APP_SECRET_KEY`
 * `DISCORD_CLIENT_ID`
 * `DISCORD_CLIENT_SECRET`
-* `DB_URL`
 * `BACKEND_BASE_URL`
 * `BOT_BASE_URL`
 * `XIV_RAID_HUB_BOT_API_KEY`
 * `ALLOWED_ORIGINS`
+* `DB_HOST`
+* `DB_NAME`
+* `DB_USER`
+* `DB_PASS`
 
 ### FFLogs GraphQL Stuff
 If you run into issues with FFLogs related queries the `schema.graphql` file may be outdated. The file is defined/maintained by FFLogs, so the one saved in this codebase could become outdated at any time.
