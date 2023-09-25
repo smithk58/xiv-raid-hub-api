@@ -14,9 +14,9 @@ import AppDataSource from '../db-connection';
 @Singleton
 export class UserService {
     @Inject private propertyService: PropertyService;
-    properties: Record<string, IProperty<PropertyValue>>;
+    private readonly properties: Record<string, IProperty<PropertyValue>>;
     constructor() {
-        this.properties = this.propertyService.loadProperties(Properties);
+        this.properties = this.propertyService.loadProperties(Properties.default);
     }
     /**
      * Logs in the specified discord user. Creates or updates a user with the discord users information.

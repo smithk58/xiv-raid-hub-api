@@ -9,14 +9,11 @@ export class PropertyService {
      * Loads a list of IProperty imports into a map of IProperty.key -> IProperty instance.
      * @param propertiesToLoad - A list of imported IProperties.
      */
-    loadProperties(propertiesToLoad: Record<string, any>) {
+    loadProperties(propertiesToLoad: (new () => IProperty<PropertyValue>)[]) {
         const propMap: Record<string, IProperty<PropertyValue>> = {};
-        Object.keys(propertiesToLoad).forEach((prop) => {
-            /* eslint-disable */
-            // @ts-ignore but can't force enforce constructor w/ interface
-            const property = new propertiesToLoad[prop]();
+        propertiesToLoad.forEach((iPropConstructor) => {
+            const property = new iPropConstructor();
             propMap[property.getKey()] = property;
-            /* eslint-enable */
         });
         return propMap;
     }

@@ -4,7 +4,7 @@ import { RaidGroup } from '../repository/entity/RaidGroup';
 import { UserService } from './UserService';
 import { RaidGroupCharacter } from '../repository/entity/RaidGroupCharacter';
 import { UserCharacter } from '../repository/entity/UserCharacter';
-import { AllowAddToRaidGroup } from '../models/user-settings/properties';
+import { AllowAddToRaidGroup } from '../models/user-settings/properties/AllowAddToRaidGroup';
 import { ValidationError } from '../utils/errors/ValidationError';
 import AppDataSource from '../db-connection';
 

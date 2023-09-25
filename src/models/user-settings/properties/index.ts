@@ -1,2 +1,5 @@
-export * from './AllowAddToRaidGroup';
+import { AllowAddToRaidGroup } from './AllowAddToRaidGroup';
 
+export default [
+    AllowAddToRaidGroup
+];
