@@ -26,13 +26,13 @@ discordUserRouter.get('/characters', async (ctx: RContext) => {
         ctx.notFound('That user doesn\'t exist, or you don\'t have permission to see their information.');
     }
 });
-discordUserRouter.get('/raid-times', async (ctx: RContext) => {
+discordUserRouter.get('/schedule', async (ctx: RContext) => {
     const userId = ctx.params.discordUserId;
-    const schedule = await discordUserService.getDiscordUsersSchedule(userId);
-    if (schedule) {
-        ctx.ok(schedule);
+    const raidTimes = await discordUserService.getDiscordUsersSchedule(userId);
+    if (raidTimes) {
+        ctx.ok(raidTimes);
     } else {
-        ctx.notFound('That user doesn\'t exist, or you don\'t have permission to see their raid schedule.');
+        ctx.notFound('That user doesn\'t exist, or you don\'t have permission to see their raid times.');
     }
 });
 export default discordUserRouter.routes();

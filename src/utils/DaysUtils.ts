@@ -1,51 +1,59 @@
-interface Day {
+export interface Day {
   bit: number;
   dayShort: string;
   dayLong: string;
   jsDay: number;
+  day: number;
 }
 
 const mon: Day = {
   bit: 1,
   dayShort: 'Mon',
   dayLong: 'Monday',
-  jsDay: 1
+  jsDay: 1,
+  day: 0
 };
 const tue: Day = {
   bit: 2,
   dayShort: 'Tue',
   dayLong: 'Tuesday',
-  jsDay: 2
+  jsDay: 2,
+  day: 1
 };
 const wed: Day = {
   bit: 4,
   dayShort: 'Wed',
   dayLong: 'Wednesday',
-  jsDay: 3
+  jsDay: 3,
+  day: 2
 };
 const thu: Day = {
   bit: 8,
   dayShort: 'Thu',
   dayLong: 'Thursday',
-  jsDay: 4
+  jsDay: 4,
+  day: 3
 };
 const fri: Day = {
   bit: 16,
   dayShort: 'Fri',
   dayLong: 'Friday',
-  jsDay: 5
+  jsDay: 5,
+  day: 4
 };
 const sat: Day = {
   bit: 32,
   dayShort: 'Sat',
   dayLong: 'Saturday',
-  jsDay: 6
+  jsDay: 6,
+  day: 5
 };
 const sun: Day = {
   bit: 64,
   dayShort: 'Sun',
   dayLong: 'Sunday',
-  jsDay: 0
+  jsDay: 0,
+  day: 6
 };
 export const DaysOfWeekByJsDay = new Map<number, Day>();
 DaysOfWeekByJsDay.set(0, sun);

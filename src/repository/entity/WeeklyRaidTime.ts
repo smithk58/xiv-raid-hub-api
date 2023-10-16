@@ -21,7 +21,7 @@ export class WeeklyRaidTime {
 
     @IsInt()
     @Column()
-    weekMask: number;
+    utcWeekMask: number;
 
     @IsInt()
     @Min(0)
@@ -43,6 +43,9 @@ export class WeeklyRaidTime {
     @Exclude()
     @OneToMany(() => Alarm, alarm => alarm.weeklyRaidTime, {onDelete: 'CASCADE'})
     alarms: Alarm[];
+
+    // Conditionally calculated for current week
+    unixTimestamp?: number;
 
     @BeforeInsert()
     @BeforeUpdate()

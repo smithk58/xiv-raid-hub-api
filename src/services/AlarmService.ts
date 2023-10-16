@@ -105,24 +105,12 @@ export class AlarmService {
                 }
                 // Calculate alarm time, handle wrapping to next day via modulo
                 const utcAlarmTimeInMinutes = (((utcTimeInMinutes - alarmOffsetMinutes) % 1440) + 1440) % 1440;
-                // Generate a week mask for the UTC days we execute the utc time on
-                let utcWeekMask = 0;
-                for (const day of DaysOfWeekByJsDay.values()) { // Sun(0)-Sat(6)
-                    // eslint-disable-next-line no-bitwise
-                    if (raidTime.weekMask & day.bit) {
-                        // Use the utcDayOffset to get the day of the week we actually execute the alarm on
-                        let targetJsDay = (day.jsDay + utcDayOffset);
-                        targetJsDay = ((targetJsDay % 7) + 7) % 7; // JS % isn't modulo operator, so have to handle it ourself
-                        const alarmDay = DaysOfWeekByJsDay.get(targetJsDay);
-                        utcWeekMask += alarmDay.bit;
-                    }
-                }
                 alarms.push(new Alarm(
                     alarmDef.id,
                     raidTime.id,
                     Math.floor(utcAlarmTimeInMinutes / 60),
                     utcAlarmTimeInMinutes % 60,
-                    utcWeekMask,
+                    raidTime.utcWeekMask, // TODO alarms can just join to raid times for this now
                 ));
             }
         }
