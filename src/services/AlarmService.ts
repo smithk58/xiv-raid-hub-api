@@ -85,24 +85,8 @@ export class AlarmService {
         const alarms: Alarm[] = [];
         for (const raidTime of weeklyRaidTimes) {
             const utcTimeInMinutes = (raidTime.utcHour * 60) + raidTime.utcMinute;
-            const usersTime = utcTimeInMinutes - raidTime.utcTimezoneOffset;
             for (const alarmDef of alarmDefs) {
                 const alarmOffsetMinutes = (alarmDef.offsetHour * 60);
-                // Determine if actual alarm days are +/- a day because of users timezone
-                let utcDayOffset = 0;
-                if(usersTime < 0) {
-                    // If users time (utc time - timezoneOffset) is below zero, the users selected time is for the previous week day of the
-                    // week in UTC time, so we have to add 1 day to the days of the week the user selected
-                    utcDayOffset++;
-                } else if (usersTime > 1440) {
-                    // If users time (utc time - timezoneOffset) is larger than one day, the users selected time is for the next day of the
-                    // week in UTC time, so we have to subtract 1 day from the days of the week the user selected
-                    utcDayOffset--;
-                }
-                // Determine if day is one day earlier because of alarm offset
-                if (utcTimeInMinutes - alarmOffsetMinutes < 0) {
-                    utcDayOffset--;
-                }
                 // Calculate alarm time, handle wrapping to next day via modulo
                 const utcAlarmTimeInMinutes = (((utcTimeInMinutes - alarmOffsetMinutes) % 1440) + 1440) % 1440;
                 alarms.push(new Alarm(
@@ -110,7 +94,7 @@ export class AlarmService {
                     raidTime.id,
                     Math.floor(utcAlarmTimeInMinutes / 60),
                     utcAlarmTimeInMinutes % 60,
-                    raidTime.utcWeekMask, // TODO alarms can just join to raid times for this now
+                    raidTime.utcWeekMask
                 ));
             }
         }
