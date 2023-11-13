@@ -7,7 +7,7 @@ import { RaidGroupService } from './RaidGroupService';
 import { DiscordApi, DiscordGuildWithChannels } from './api-wrappers/discord/discord-api';
 import { UserService } from './UserService';
 import { DiscordGuild } from './api-wrappers/discord/DiscordGuild';
-import { BotApi } from './api-wrappers/bot/bot-api';
+import { BotApiService } from './api-wrappers/bot/BotApiService';
 import { DaysOfWeekByJsDay } from '../utils/DaysUtils';
 import { ValidationError} from '../utils/errors/ValidationError';
 import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
@@ -17,6 +17,7 @@ import { IdNamePair } from './api-wrappers/bot/IdNamePair';
 import { SimpleGuild } from './api-wrappers/bot/SimpleGuild';
 import { AlarmType } from '../models/AlarmType';
 import AppDataSource from '../db-connection';
+import { RaidGroup } from '../repository/entity/RaidGroup';
 
 @Singleton
 export class AlarmService {
@@ -24,7 +25,6 @@ export class AlarmService {
     @Inject private raidGroupSecurity: RaidGroupSecurityService;
     @Inject private discordApi: DiscordApi;
     @Inject private userService: UserService;
-    @Inject private botApi: BotApi;
 
     public async getAlarmDefinitions(userId: number) {
         return AppDataSource
@@ -101,74 +101,6 @@ export class AlarmService {
         return entityManager.save(alarms);
     }
     /**
-     * Returns the specified guild with both channels and roles resolved, if both the user and bot have access to the guild.
-     * @param token - The discord token for the current user, for retrieving the guilds they're in.
-     * @param guildId - The  guild ID to get.
-     */
-    public async getGuildDetail(token: string, guildId: string): Promise<SimpleGuild> {
-        const usersGuilds = await this.discordApi.getGuilds(token);
-        // TODO Probably more efficient to hit /guilds/<id>/members/<id>, but am lazy atm
-        const guild = usersGuilds.find((g) => g.id === guildId);
-        if (!guild || !this.hasManageGuild(guild)) {
-            throw new Error('That server either doesn\'t exist, or you don\'t have Manage Guild permission to it.');
-        }
-        const botGuild = await this.botApi.getGuildDetail(guild.id);
-        if (!botGuild) {
-            throw new Error('The bot couldn\'t find that server. Either it was removed from the server or discord is having issues.');
-        }
-        return botGuild;
-    }
-    /**
-     * Returns a list of guilds that both the user and the bot is in. Optionally resolves the channels for a particular guild if a target
-     * guild ID is provided as well.
-     * @param token - The discord token for the current user, for retrieving the guilds they're in.
-     * @param targetGuildId - The target guild ID to get channels for.
-     */
-    public async getGuilds(token: string, targetGuildId?: string): Promise<IdNamePair[]> {
-        const usersGuilds = await this.discordApi.getGuilds(token);
-        const botsGuildMap = await this.botApi.getGuilds().catch(() => {
-            throw new Error('Unable to get the list of servers available to the bot.');
-        });
-        // Filter to users guilds that the bot is available on and the person has MANAGE_CHANNELS permission for
-        let targetGuild: DiscordGuildWithChannels;
-        const guilds = usersGuilds.filter((guild) => {
-            const isValid = typeof (botsGuildMap[guild.id]) !== 'undefined' && this.hasManageGuild(guild);
-            if (isValid && guild.id === targetGuildId) {
-               targetGuild = guild;
-            }
-            return isValid;
-        });
-        // If we have a target guild, resolve channels on it before returning
-        if (targetGuild) {
-            targetGuild.channels = await this.getGuildChannels(targetGuild.id);
-        }
-        return guilds;
-    }
-    public async getGuildChannels(guildId: string, token?: string): Promise<IdNamePair[]> {
-        // Validate user is allowed to see guild if we're provided a token
-        if (token) {
-            const usersGuilds = await this.discordApi.getGuilds(token);
-            const targetGuild = usersGuilds.find(guild => guild.id === guildId);
-            // Ensure it's a guild they're in and have manage permission to before returning channels
-            if (!targetGuild || !this.hasManageGuild(targetGuild)) {
-                return Promise.resolve(null as IdNamePair[]);
-            }
-        }
-        return this.botApi.getGuildChannels(guildId);
-    }
-    public async getGuildRoles(guildId: string, token?: string): Promise<IdNamePair[]> {
-        // Validate user is allowed to see guild if we're provided a token
-        if (token) {
-            const usersGuilds = await this.discordApi.getGuilds(token);
-            const targetGuild = usersGuilds.find(guild => guild.id === guildId);
-            // Ensure it's a guild they're in before returning roles
-            if (!targetGuild) {
-                return Promise.resolve(null as IdNamePair[]);
-            }
-        }
-        return this.botApi.getGuildRoles(guildId);
-    }
-    /**
      * Returns the weekly raid times for a particular raid group.
      * @param userId - The ID of the user you want the raid times for. Used for permission checking.
      * @param raidGroupId. The ID of the raid group you want raid times for.
@@ -200,6 +132,16 @@ export class AlarmService {
             .select(['ad', 'rg'])
             .getMany();
     }
+    public async updateAlarmStatus(userId: number, isEnabled: boolean, channelId?: string) {
+        const query = AppDataSource.createQueryBuilder()
+            .update(AlarmDefinition)
+            .set({isEnabled})
+            .where('"userId" = :userId', {userId});
+        if (channelId) {
+            query.andWhere('type = :type AND "targetId" = :channelId"', {type: AlarmType.CHANNEL, channelId})
+        }
+        return query.execute();
+    }
     private async saveAlarmDefinition(alarmDef: AlarmDefinition, userId: number, userDiscordId: string, token: string) {
         // Generate alarms for this alarm definition
         const weeklyRaidTimes = await this.getWeeklyRaidTimes(userId, alarmDef.raidGroupId);
@@ -211,7 +153,7 @@ export class AlarmService {
         const isChannelAlarm = alarmDef.type === AlarmType.CHANNEL;
         const hasRole = !!alarmDef.targetRoleId;
         // Confirm the guild is allowed and the selected channel/role are valid
-        const targetGuild = await this.getGuildDetail(token, alarmDef.targetGuildId);
+        const targetGuild = await this.discordApi.getGuildDetail(token, alarmDef.targetGuildId);
         if (!targetGuild) {
             throw new ValidationError('Invalid discord server. You require Manage Guild permission on the server and both you and the' +
                 ' XIV Raid Hub bot need to be in the server.', 'targetGuildId'
@@ -266,10 +208,6 @@ export class AlarmService {
             .createQueryBuilder('alarm')
             .where('alarm.id = :alarmId AND alarm."ownerId" = :userId', {alarmId, userId})
             .getCount() > 0;
-    }
-    private hasManageGuild(guild: DiscordGuild) {
-        // eslint-disable-next-line no-bitwise
-        return (guild.permissions & 20) !== 0; // 20 = manage guild
     }
     private duplicateAlarmHandler(error: {code: string}): never {
         if (error.code === PG_UNIQUE_VIOLATION) {

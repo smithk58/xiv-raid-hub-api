@@ -6,7 +6,7 @@ import { SimpleGuild } from './SimpleGuild';
 import { EnvService } from '../../EnvService';
 
 @Singleton
-export class BotApi {
+export class BotApiService {
     @Inject private envService: EnvService;
     public async getGuilds(): Promise<Record<string, SimpleGuild>> {
         const url = this.createUrl('/guilds');

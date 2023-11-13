@@ -6,6 +6,8 @@ import { Context, DefaultState } from 'koa';
 import { APIKeyService } from '../services/APIKeyService';
 import { DiscordUserService } from '../services/DiscordUserService';
 import { Container } from 'typescript-ioc';
+import { AlarmDefinition } from '../repository/entity/AlarmDefinition';
+import { plainToClass } from 'class-transformer';
 
 const apiKeyService: APIKeyService = Container.get(APIKeyService);
 const discordUserService: DiscordUserService = Container.get(DiscordUserService);
@@ -33,6 +35,21 @@ discordUserRouter.get('/raid-times', async (ctx: RContext) => {
         ctx.ok(schedule);
     } else {
         ctx.notFound('That user doesn\'t exist, or you don\'t have permission to see their raid schedule.');
+    }
+});
+discordUserRouter.put('/alarms', async (ctx: RContext) => {
+    const userId = ctx.params.discordUserId;
+    const channelId = ctx.query.targetGuildId as string;
+    // We're only using allowing update of isEnabled for now
+    const alarm: AlarmDefinition = plainToClass(AlarmDefinition, ctx.request.body);
+    if (typeof(alarm) === 'undefined' || typeof(alarm.isEnabled) === 'undefined') {
+        ctx.badRequest('A state wasn\'t provided for isEnabled and is required.');
+    }
+    const amountUpdated = await discordUserService.toggleDiscordUsersAlarms(userId, alarm.isEnabled, channelId);
+    if (amountUpdated) {
+        ctx.ok(amountUpdated);
+    } else {
+        ctx.notFound('That user doesn\'t exist, or you don\'t have permission to update their alarms.');
     }
 });
 export default discordUserRouter.routes();
