@@ -4,20 +4,15 @@ import { PG_UNIQUE_VIOLATION } from '@drdgvhbh/postgres-error-codes';
 
 import { AlarmDefinition } from '../repository/entity/AlarmDefinition';
 import { RaidGroupService } from './RaidGroupService';
-import { DiscordApi, DiscordGuildWithChannels } from './api-wrappers/discord/discord-api';
+import { DiscordApi } from './api-wrappers/discord/discord-api';
 import { UserService } from './UserService';
-import { DiscordGuild } from './api-wrappers/discord/DiscordGuild';
-import { BotApiService } from './api-wrappers/bot/BotApiService';
 import { DaysOfWeekByJsDay } from '../utils/DaysUtils';
 import { ValidationError} from '../utils/errors/ValidationError';
 import { WeeklyRaidTime } from '../repository/entity/WeeklyRaidTime';
 import { Alarm } from '../repository/entity/Alarm';
 import { RaidGroupSecurityService } from './RaidGroupSecurityService';
-import { IdNamePair } from './api-wrappers/bot/IdNamePair';
-import { SimpleGuild } from './api-wrappers/bot/SimpleGuild';
 import { AlarmType } from '../models/AlarmType';
 import AppDataSource from '../db-connection';
-import { RaidGroup } from '../repository/entity/RaidGroup';
 
 @Singleton
 export class AlarmService {
