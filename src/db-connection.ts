@@ -5,6 +5,7 @@ const srcDir = isDev ? 'src' : 'dist'
 const fileExt = isDev ? 'ts' : 'js';
 const AppDataSource = new DataSource({
     type: 'postgres',
+    url: process.env.DATABASE_URL,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
     username: process.env.DB_USER,
