@@ -18,7 +18,7 @@ const AppDataSource = new DataSource({
         rejectUnauthorized: false
     },
     logging: ['error'],
-    synchronize: isDev
+    synchronize: isDev || process.env.SYNCHRONIZE_DB === 'true'
 });
 
 export default AppDataSource;

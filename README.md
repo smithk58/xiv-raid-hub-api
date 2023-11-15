@@ -27,6 +27,7 @@ authenticate (e.g. `https://<your-prod-domain>.com/connect/discord/callback`, or
 * `FFLOGS_CLIENT_ID` - A valid FFLogs API client ID. Only needed for features that interact with the FFLogs API (e.g. getting expansions, zones, reports).
 * `FFLOGS_SECRET` - The secret for the above ID.
 * `ALLOWED_ORIGINS` - Restricts webservers allowed origins. Only applied when in production mode. Expects a JSON array of origins (e.g. ["https://www.xivraidhub.com", "https://bot.xivraidhub.com"]).
+* `SYNCHRONIZE_DB` - Decides whether the DB is automatically created/maintained on startup. Is automatically enabled in development, but only should be enabled in production for the initial startup.
 
 ## For Development
 You can paste the below snippet in a `.env` file in the root of your project. This should never be committed. You must fill in the missing values and/or delete any values that aren't needed for your local development.
