@@ -1,18 +1,21 @@
 # Build stage
-FROM node:14-alpine as build
+FROM node:16-alpine as build
 
 WORKDIR /app
 
 # Build raid hub API dependencies
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Build raid hub API dist
 COPY . .
 RUN npm run build
 
+# Remove devDependencies
+RUN npm prune --production
+
 # Runtime stage
-FROM node:14-alpine
+FROM node:16-alpine
 
 WORKDIR /app
 
