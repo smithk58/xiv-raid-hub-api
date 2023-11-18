@@ -81,7 +81,27 @@ export class AlarmService {
         for (const raidTime of weeklyRaidTimes) {
             const utcTimeInMinutes = (raidTime.utcHour * 60) + raidTime.utcMinute;
             for (const alarmDef of alarmDefs) {
+                // Determine if day of alarm is one day earlier because of alarm offset (e.g. raid time is 1am, alarm is 2 hours earlier)
                 const alarmOffsetMinutes = (alarmDef.offsetHour * 60);
+                const alarmIsDayBefore = utcTimeInMinutes - alarmOffsetMinutes < 0;
+                // Save the existing week mask if the alarm is on the same day, otherwise adjust each day in the UTC week mask to be 1 day
+                // earlier if the alarm is for the day before the actual time
+                let utcWeekMask = raidTime.utcWeekMask;
+                if (alarmIsDayBefore) {
+                    let dayBeforeMask = 0;
+                    for (const day of DaysOfWeekByJsDay.values()) { // Sun(0)-Sat(6)
+                        // eslint-disable-next-line no-bitwise
+                        if (raidTime.utcWeekMask & day.bit) {
+                            // Use the utcDayOffset to get the day of the week we actually execute the alarm on
+                            let targetJsDay = (day.jsDay - 1); // -1 because we want the day before
+                            // Have to handle week days wrapping (e.g. mon -> sun), JS % isn't modulo operator, so have to handle it ourself
+                            targetJsDay = ((targetJsDay % 7) + 7) % 7;
+                            const alarmDay = DaysOfWeekByJsDay.get(targetJsDay);
+                            dayBeforeMask += alarmDay.bit;
+                        }
+                    }
+                    utcWeekMask = dayBeforeMask;
+                }
                 // Calculate alarm time, handle wrapping to next day via modulo
                 const utcAlarmTimeInMinutes = (((utcTimeInMinutes - alarmOffsetMinutes) % 1440) + 1440) % 1440;
                 alarms.push(new Alarm(
@@ -89,7 +109,7 @@ export class AlarmService {
                     raidTime.id,
                     Math.floor(utcAlarmTimeInMinutes / 60),
                     utcAlarmTimeInMinutes % 60,
-                    raidTime.utcWeekMask
+                    utcWeekMask
                 ));
             }
         }
