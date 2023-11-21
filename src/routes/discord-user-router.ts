@@ -45,9 +45,9 @@ discordUserRouter.put('/alarms', async (ctx: RContext) => {
     if (typeof(alarm) === 'undefined' || typeof(alarm.isEnabled) === 'undefined') {
         ctx.badRequest('A state wasn\'t provided for isEnabled and is required.');
     }
-    const amountUpdated = await discordUserService.toggleDiscordUsersAlarms(userId, alarm.isEnabled, channelId);
-    if (amountUpdated) {
-        ctx.ok(amountUpdated);
+    const updateResult = await discordUserService.toggleDiscordUsersAlarms(userId, alarm.isEnabled, channelId);
+    if (updateResult) {
+        ctx.ok({amountUpdated: updateResult.affected});
     } else {
         ctx.notFound('That user doesn\'t exist, or you don\'t have permission to update their alarms.');
     }

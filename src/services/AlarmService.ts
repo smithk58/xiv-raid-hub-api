@@ -151,9 +151,9 @@ export class AlarmService {
         const query = AppDataSource.createQueryBuilder()
             .update(AlarmDefinition)
             .set({isEnabled})
-            .where('"userId" = :userId', {userId});
+            .where('"ownerId" = :userId', {userId});
         if (channelId) {
-            query.andWhere('type = :type AND "targetId" = :channelId"', {type: AlarmType.CHANNEL, channelId})
+            query.andWhere('type = :type AND "targetId" = :channelId', {type: AlarmType.CHANNEL, channelId})
         }
         return query.execute();
     }
