@@ -59,16 +59,19 @@ app.use(bodyParser({
 
 // Easier responses https://www.npmjs.com/package/koa-respond
 app.use(respond());
-
-AppDataSource.initialize().then(() => {
-    console.log('DB connection successful');
-    // Routes
-    app.use(apiRouter.routes());
-    app.use(apiRouter.allowedMethods());
-}).catch((err) => {
-    console.log('DB connection failed', err);
-})
-
 // Application error logging.
 app.on('error', console.error);
-export default app;
+
+const appIsReady = new Promise<Koa>((resolve, reject) => {
+    AppDataSource.initialize().then(() => {
+        console.log('DB connection successful.');
+        // Routes
+        app.use(apiRouter.routes());
+        app.use(apiRouter.allowedMethods());
+        resolve(app);
+    }).catch((err) => {
+        console.log('DB connection failed.', err);
+        reject();
+    })
+});
+export default appIsReady;
